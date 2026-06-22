@@ -136,6 +136,7 @@ export default async function BoutiquePage({ searchParams }: Props) {
                     <ProductCard
                       key={p.id} id={p.id} title={p.title} price={p.price}
                       compare_price={p.compare_price} stock={p.stock} image_url={p.image_url}
+                      loyalty_points={p.loyalty_points}
                     />
                   ))
                 ) : (

@@ -64,7 +64,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 -- 5. FAQ
 -- ============================================================
-INSERT INTO public.faqs (id, question, answer, position) VALUES
+INSERT INTO public.faq (id, question, answer, position) VALUES
   ('f1000000-0000-0000-0000-000000000001', 'Quels sont les delais de livraison ?', 'La livraison standard est effectuee sous 3 a 5 jours ouvrables sur tout le territoire tunisien. La livraison express (24-48h) est disponible pour Tunis et sa banlieue moyennant un supplement de 10 DT.', 0),
   ('f1000000-0000-0000-0000-000000000002', 'Comment retourner un produit ?', 'Vous disposez de 30 jours apres reception pour retourner un produit dans son emballage d''origine. Contactez notre support pour obtenir un bon de retour. Le remboursement est effectue sous 7 jours apres reception du colis retour.', 1),
   ('f1000000-0000-0000-0000-000000000003', 'La garantie couvre-t-elle les pannes ?', 'Tous nos produits beneficient d''une garantie constructeur de 2 ans minimum. Cette garantie couvre les defauts de fabrication et pannes non liees a une mauvaise utilisation. Les accessoires sont garantis 1 an.', 2),

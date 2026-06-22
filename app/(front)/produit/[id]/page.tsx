@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductCard from "../../components/ProductCard";
+import ProductActions from "../../components/ProductActions";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -88,17 +89,14 @@ export default async function ProduitPage({ params }: Props) {
             )}
           </div>
 
-          <div className="pdp-cta" style={{ marginTop: "var(--s5)" }}>
-            <div className="qty">
-              <button type="button" data-act="-" aria-label="Diminuer">&#x2212;</button>
-              <input type="text" defaultValue="1" inputMode="numeric" aria-label="Quantite" />
-              <button type="button" data-act="+" aria-label="Augmenter">+</button>
+          {produit.loyalty_points > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "var(--s3)", padding: "10px 14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "var(--r)", fontSize: "var(--text-sm)" }}>
+              <span style={{ fontSize: "18px" }}>&#x2B50;</span>
+              <span>Gagnez <strong style={{ color: "var(--amber)" }}>{produit.loyalty_points} points fidelite</strong> avec cet achat</span>
             </div>
-            <Link href="/panier" className="btn btn--indigo" style={{ flex: 1, minWidth: "160px" }}>
-              Ajouter au panier &rarr;
-            </Link>
-            <Link href="/devis" className="btn btn--ink">Demander un devis</Link>
-          </div>
+          )}
+
+          <ProductActions product={{ id: produit.id, title: produit.title, price: produit.price, image_url: produit.image_url, stock: produit.stock }} />
 
           <div className="pdp-features" style={{ marginTop: "var(--s5)" }}>
             <div className="pf"><span className="ic">&#x26A1;</span><span>Livraison gratuite des 50 DT</span></div>
@@ -164,7 +162,7 @@ export default async function ProduitPage({ params }: Props) {
           </div>
           <div className="products">
             {accessoires.map((p) => (
-              <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} />
+              <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} loyalty_points={p.loyalty_points} />
             ))}
           </div>
         </section>
@@ -179,7 +177,7 @@ export default async function ProduitPage({ params }: Props) {
           </div>
           <div className="products">
             {similaires.map((p) => (
-              <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} />
+              <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} loyalty_points={p.loyalty_points} />
             ))}
           </div>
         </section>

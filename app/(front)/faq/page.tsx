@@ -5,7 +5,7 @@ export const metadata = { title: "FAQ - Kicksoft Studio" };
 
 export default async function FaqPublicPage() {
   const supabase = await createClient();
-  const { data: faqs } = await supabase.from("faqs").select("*").order("position", { ascending: true });
+  const { data: faqs } = await supabase.from("faq").select("*").order("position", { ascending: true });
 
   return (
     <>

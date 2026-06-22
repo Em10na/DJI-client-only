@@ -1,5 +1,6 @@
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { CartProvider } from "@/lib/cart";
 import Script from "next/script";
 
 export const metadata = {
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default function FrontLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <CartProvider>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
@@ -23,6 +24,6 @@ export default function FrontLayout({ children }: { children: React.ReactNode })
       <Footer />
 
       <Script src="/front/js/main.js" strategy="afterInteractive" />
-    </>
+    </CartProvider>
   );
 }

@@ -45,10 +45,17 @@ export default function InscriptionPage() {
     }
 
     if (data.user) {
+      const { data: clientRole } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("name", "client")
+        .single();
+
       await supabase.from("profiles").upsert({
         id: data.user.id,
         full_name: form.nom.trim(),
         phone: form.telephone.trim() || null,
+        role_id: clientRole?.id ?? null,
       });
     }
 

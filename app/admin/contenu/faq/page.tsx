@@ -15,7 +15,7 @@ export default function FaqPage() {
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const [form, setForm] = useState({ question: "", answer: "", position: "0" });
 
-  async function chargerFaqs() { setLoading(true); const { data } = await supabase.from("faqs").select("*").order("position", { ascending: true }); setFaqs(data ?? []); setLoading(false); }
+  async function chargerFaqs() { setLoading(true); const { data } = await supabase.from("faq").select("*").order("position", { ascending: true }); setFaqs(data ?? []); setLoading(false); }
   useEffect(() => { chargerFaqs(); }, []);
 
   function ouvrirAjout() { setEditId(null); setErreurs({}); setForm({ question: "", answer: "", position: String(faqs.length) }); setShowModal(true); }
@@ -37,11 +37,11 @@ export default function FaqPage() {
     if (!valider()) return;
     const payload = { question: form.question.trim(), answer: form.answer.trim(), position: parseInt(form.position) || 0 };
     if (editId) {
-      const { error } = await supabase.from("faqs").update(payload).eq("id", editId);
+      const { error } = await supabase.from("faq").update(payload).eq("id", editId);
       if (error) { setAlert({ message: "Erreur : " + error.message, type: "danger" }); return; }
       setAlert({ message: "FAQ mise a jour !", type: "success" });
     } else {
-      const { error } = await supabase.from("faqs").insert(payload);
+      const { error } = await supabase.from("faq").insert(payload);
       if (error) { setAlert({ message: "Erreur : " + error.message, type: "danger" }); return; }
       setAlert({ message: "FAQ ajoutee !", type: "success" });
     }
@@ -49,7 +49,7 @@ export default function FaqPage() {
     setTimeout(() => setAlert({ message: "", type: "" }), 3000);
   }
 
-  async function supprimerFaq(id: string) { if (!confirm("Confirmer la suppression ?")) return; await supabase.from("faqs").delete().eq("id", id); setAlert({ message: "FAQ supprimee.", type: "success" }); chargerFaqs(); setTimeout(() => setAlert({ message: "", type: "" }), 3000); }
+  async function supprimerFaq(id: string) { if (!confirm("Confirmer la suppression ?")) return; await supabase.from("faq").delete().eq("id", id); setAlert({ message: "FAQ supprimee.", type: "success" }); chargerFaqs(); setTimeout(() => setAlert({ message: "", type: "" }), 3000); }
 
   return (
     <div className="container-fluid mt-4">

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { FileObject } from "@supabase/storage-js";
 
-const BUCKET = "medias";
+const BUCKET = "media";
 
 function formaterTaille(octets: number): string {
   if (octets < 1024) return octets + " o";

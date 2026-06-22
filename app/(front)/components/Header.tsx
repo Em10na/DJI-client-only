@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CartCount from "./CartCount";
 
 export default function Header() {
   return (
@@ -53,6 +54,7 @@ export default function Header() {
                 <path d="M4 7h16" />
                 <path d="M16 11a4 4 0 0 1-8 0" />
               </svg>
+              <CartCount />
             </Link>
             <button className="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">&#x2261;</button>
           </div>

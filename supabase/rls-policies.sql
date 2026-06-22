@@ -67,7 +67,7 @@ ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.faq ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets_support ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
@@ -253,12 +253,12 @@ CREATE POLICY "posts_admin_manage" ON public.posts
 --     Lecture publique / CRUD admin
 -- ============================================================
 
-DROP POLICY IF EXISTS "faqs_public_read" ON public.faqs;
-CREATE POLICY "faqs_public_read" ON public.faqs
+DROP POLICY IF EXISTS "faqs_public_read" ON public.faq;
+CREATE POLICY "faqs_public_read" ON public.faq
   FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "faqs_admin_manage" ON public.faqs;
-CREATE POLICY "faqs_admin_manage" ON public.faqs
+DROP POLICY IF EXISTS "faqs_admin_manage" ON public.faq;
+CREATE POLICY "faqs_admin_manage" ON public.faq
   FOR ALL USING (public.is_admin());
 
 

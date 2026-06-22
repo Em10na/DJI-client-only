@@ -14,6 +14,7 @@ type Produit = {
   status: string;
   short_description: string | null;
   image_url: string | null;
+  loyalty_points: number;
   category_id: string | null;
   categories?: { name: string } | null;
 };
@@ -35,7 +36,7 @@ export default function ProduitsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: "", category_id: "", price: "", compare_price: "",
-    stock: "0", short_description: "", status: "draft", image_url: "",
+    stock: "0", short_description: "", status: "draft", image_url: "", loyalty_points: "0",
   });
 
   function getPublicUrl(path: string): string {
@@ -62,7 +63,7 @@ export default function ProduitsPage() {
     setErreurs({});
     setImagePreview(null);
     setImageFile(null);
-    setForm({ title: "", category_id: "", price: "", compare_price: "", stock: "0", short_description: "", status: "draft", image_url: "" });
+    setForm({ title: "", category_id: "", price: "", compare_price: "", stock: "0", short_description: "", status: "draft", image_url: "", loyalty_points: "0" });
     setShowModal(true);
   }
 
@@ -75,7 +76,7 @@ export default function ProduitsPage() {
       title: p.title, category_id: p.category_id ?? "",
       price: String(p.price), compare_price: String(p.compare_price ?? ""),
       stock: String(p.stock), short_description: p.short_description ?? "",
-      status: p.status, image_url: p.image_url ?? "",
+      status: p.status, image_url: p.image_url ?? "", loyalty_points: String(p.loyalty_points ?? 0),
     });
     setShowModal(true);
   }
@@ -145,7 +146,7 @@ export default function ProduitsPage() {
       category_id: form.category_id || null,
       price: parseFloat(form.price), compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
       stock: parseInt(form.stock), short_description: form.short_description.trim(),
-      status: form.status, image_url: imageUrl,
+      status: form.status, image_url: imageUrl, loyalty_points: parseInt(form.loyalty_points) || 0,
     };
 
     if (editId) {
@@ -330,6 +331,11 @@ export default function ProduitsPage() {
                       <option value="draft">Brouillon</option>
                       <option value="published">Publie</option>
                     </select>
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label"><i className="ti ti-star me-1 text-warning"></i>Points fidelite</label>
+                    <input type="number" className="form-control" value={form.loyalty_points} onChange={(e) => setForm({ ...form, loyalty_points: e.target.value })} placeholder="0" />
+                    <small className="text-muted">Points gagnes par achat</small>
                   </div>
                 </div>
               </div>

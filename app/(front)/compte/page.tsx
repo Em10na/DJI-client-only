@@ -7,21 +7,23 @@ import Link from "next/link";
 export default function CompteDashboard() {
   const supabase = createClient();
   const [nom, setNom] = useState("");
-  const [stats, setStats] = useState({ commandes: 0, favoris: 0, tickets: 0 });
+  const [stats, setStats] = useState({ commandes: 0, favoris: 0, tickets: 0, points: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function charger() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const [{ data: profil }, { count: commandes }, { count: favoris }, { count: tickets }] = await Promise.all([
+      const [{ data: profil }, { count: commandes }, { count: favoris }, { count: tickets }, { data: loyaltyTxns }] = await Promise.all([
         supabase.from("profiles").select("full_name").eq("id", user.id).single(),
         supabase.from("orders").select("*", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("wishlist").select("*", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("tickets_support").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("loyalty_transactions").select("points").eq("user_id", user.id),
       ]);
+      const pointsBalance = (loyaltyTxns ?? []).reduce((s: number, t: { points: number }) => s + t.points, 0);
       setNom(profil?.full_name || user.email || "");
-      setStats({ commandes: commandes ?? 0, favoris: favoris ?? 0, tickets: tickets ?? 0 });
+      setStats({ commandes: commandes ?? 0, favoris: favoris ?? 0, tickets: tickets ?? 0, points: pointsBalance });
       setLoading(false);
     }
     charger();
@@ -34,11 +36,12 @@ export default function CompteDashboard() {
       <h2 style={{ fontSize: "var(--text-2xl)", marginBottom: "var(--s2)" }}>Bonjour, {nom} !</h2>
       <p style={{ color: "var(--fg-soft)", marginBottom: "var(--s6)" }}>Bienvenue dans votre espace client.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--s4)", marginBottom: "var(--s6)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--s4)", marginBottom: "var(--s6)" }}>
         {[
           { label: "Commandes", valeur: stats.commandes, lien: "/compte/commandes", couleur: "var(--indigo)" },
           { label: "Favoris", valeur: stats.favoris, lien: "/compte/favoris", couleur: "var(--rose)" },
           { label: "Tickets", valeur: stats.tickets, lien: "/compte/support", couleur: "var(--amber)" },
+          { label: "Points fidelite", valeur: stats.points, lien: "/compte/fidelite", couleur: "#d97706" },
         ].map((s) => (
           <Link key={s.label} href={s.lien} style={{ textDecoration: "none" }}>
             <div style={{ padding: "var(--s5)", background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: "var(--r)", textAlign: "center" }}>

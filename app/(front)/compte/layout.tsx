@@ -8,6 +8,7 @@ const MENU = [
   { label: "Mon profil", href: "/compte/profil", icone: "&#x1F464;" },
   { label: "Mes commandes", href: "/compte/commandes", icone: "&#x1F4E6;" },
   { label: "Mes favoris", href: "/compte/favoris", icone: "&#x2764;" },
+  { label: "Fidelite", href: "/compte/fidelite", icone: "&#x2B50;" },
   { label: "Support", href: "/compte/support", icone: "&#x1F4AC;" },
   { label: "Parametres", href: "/compte/parametres", icone: "&#x2699;" },
 ];

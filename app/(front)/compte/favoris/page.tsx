@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCart } from "@/lib/cart";
 import Link from "next/link";
 
 type Favori = {
@@ -12,9 +13,10 @@ type Favori = {
 
 export default function FavorisPage() {
   const supabase = createClient();
+  const { addItem } = useCart();
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "" });
 
   useEffect(() => {
     async function charger() {
@@ -30,8 +32,14 @@ export default function FavorisPage() {
   async function retirerFavori(id: string) {
     await supabase.from("wishlist").delete().eq("id", id);
     setFavoris(favoris.filter((f) => f.id !== id));
-    setAlert("Produit retire des favoris.");
-    setTimeout(() => setAlert(""), 3000);
+    setAlert({ message: "Produit retire des favoris.", type: "success" });
+    setTimeout(() => setAlert({ message: "", type: "" }), 3000);
+  }
+
+  function ajouterAuPanier(p: { id: string; title: string; price: number; image_url: string | null; stock: number }) {
+    addItem(p);
+    setAlert({ message: `"${p.title}" ajoute au panier !`, type: "success" });
+    setTimeout(() => setAlert({ message: "", type: "" }), 2000);
   }
 
   if (loading) return <p style={{ color: "var(--fg-mute)" }}>Chargement...</p>;
@@ -42,9 +50,9 @@ export default function FavorisPage() {
         Mes favoris <span style={{ fontFamily: "var(--ff-mono)", fontSize: "var(--text-sm)", color: "var(--fg-mute)", fontWeight: 400 }}>({favoris.length})</span>
       </h2>
 
-      {alert && (
+      {alert.message && (
         <div style={{ padding: "10px 14px", borderRadius: "var(--r)", marginBottom: "var(--s4)", fontSize: "var(--text-sm)", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
-          {alert}
+          {alert.message}
         </div>
       )}
 
@@ -72,9 +80,13 @@ export default function FavorisPage() {
                   </Link>
                   <div style={{ fontFamily: "var(--ff-display)", fontWeight: 700, color: "var(--indigo)", marginBottom: "var(--s3)" }}>{p.price} DT</div>
                   <div style={{ display: "flex", gap: "var(--s2)" }}>
-                    <Link href={`/produit/${p.id}`} style={{ flex: 1, padding: "8px", background: "var(--indigo)", color: "white", borderRadius: "var(--r)", textDecoration: "none", fontSize: "var(--text-xs)", textAlign: "center", fontWeight: 600 }}>
-                      Voir
-                    </Link>
+                    <button
+                      onClick={() => ajouterAuPanier(p)}
+                      disabled={p.stock <= 0}
+                      style={{ flex: 1, padding: "8px", background: "var(--indigo)", color: "white", borderRadius: "var(--r)", border: "none", fontSize: "var(--text-xs)", textAlign: "center", fontWeight: 600, cursor: "pointer", opacity: p.stock <= 0 ? 0.5 : 1 }}
+                    >
+                      {p.stock > 0 ? "Ajouter au panier" : "Rupture"}
+                    </button>
                     <button onClick={() => retirerFavori(f.id)} style={{ padding: "8px 12px", background: "none", border: "1px solid var(--rule)", borderRadius: "var(--r)", fontSize: "var(--text-xs)", color: "var(--rose)", cursor: "pointer" }}>
                       &#x2715;
                     </button>

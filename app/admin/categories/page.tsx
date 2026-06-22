@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-const BUCKET = "medias";
+const BUCKET = "products";
 
 type Categorie = { id: string; name: string; description: string | null; image_url: string | null; created_at: string };
 type Collection = { id: string; name: string; description: string | null; image_url: string | null; created_at: string };
@@ -108,7 +108,8 @@ export default function CategoriesPage() {
 
     const table = modalType === "categorie" ? "categories" : "collections";
     const label = modalType === "categorie" ? "Categorie" : "Collection";
-    const payload = { name: form.name.trim(), description: form.description.trim() || null, image_url: imageUrl };
+    const slug = form.name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const payload = { name: form.name.trim(), slug, description: form.description.trim() || null, image_url: imageUrl };
 
     if (editId) {
       const { error } = await supabase.from(table).update(payload).eq("id", editId);
@@ -237,7 +238,7 @@ export default function CategoriesPage() {
                         <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
                         <p className="text-muted mb-2" style={{ fontSize: "12px" }}>
                           JPG, PNG, WebP — max 5 Mo<br />
-                          Bucket : <code>medias</code>
+                          Bucket : <code>products</code>
                         </p>
                         <div className="d-flex gap-2">
                           <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => fileRef.current?.click()}>

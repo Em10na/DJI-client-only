@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import ProductCard from "./components/ProductCard";
 import NewsletterForm from "./components/NewsletterForm";
+import DroneCurtain from "./components/DroneCurtain";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -16,85 +17,89 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* HERO BENTO */}
-      <section className="hero">
+      <DroneCurtain />
+
+      {/* ====== HERO — DRONZA STYLE ====== */}
+      <section className="dronza-hero">
+        {/* Mini drones d'ambiance */}
+        <img src="/front/images/drone-hero.png" alt="" className="real-drone real-drone--1" />
+        <img src="/front/images/drone-hero.png" alt="" className="real-drone real-drone--2" />
+
+        {/* Slider arrows */}
+        <button className="dronza-hero__arrow dronza-hero__arrow--left" aria-label="Precedent">&#x2039;</button>
+        <button className="dronza-hero__arrow dronza-hero__arrow--right" aria-label="Suivant">&#x203A;</button>
+
+        <div className="container dronza-hero__grid">
+          {/* Left column — text */}
+          <div className="dronza-hero__left">
+            <div className="dronza-hero__title-box">
+              <h1>{template?.title || "Equipements Tech pour les meilleures performances"}</h1>
+            </div>
+            <p className="dronza-hero__desc">
+              {template?.subtitle || "Decouvrez notre gamme de drones, gadgets et equipements professionnels. Technologie de pointe, livraison rapide et garantie 2 ans sur tous nos produits."}
+            </p>
+            <Link href="/boutique" className="dronza-hero__cta">
+              Explorer la boutique
+              <svg width="16" height="12" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </Link>
+            <div className="dronza-hero__stats">
+              <div className="dronza-hero__stat"><strong>500+</strong><span>Produits</span></div>
+              <div className="dronza-hero__stat"><strong>24h</strong><span>Livraison</span></div>
+              <div className="dronza-hero__stat"><strong>2 ans</strong><span>Garantie</span></div>
+            </div>
+          </div>
+
+          {/* Right column — circle + drone */}
+          <div className="dronza-hero__right">
+            <div className="dronza-hero__circle"></div>
+            <div className="dronza-hero__circle-ring"></div>
+            <img
+              src="/front/images/drone-hero.png"
+              alt="Drone Kicksoft"
+              className="dronza-hero__drone"
+            />
+            <div className="dronza-hero__shadow"></div>
+          </div>
+        </div>
+
+        {/* Gear icon bottom-left */}
+        <div className="dronza-hero__gear">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m11-11h-2M3 12H1m16.36-7.36l-1.42 1.42M7.05 16.95l-1.42 1.42m12.73 0l-1.42-1.42M7.05 7.05L5.63 5.63"/></svg>
+        </div>
+      </section>
+
+      {/* ====== FEATURES BAR ====== */}
+      <section className="features-bar">
         <div className="container">
-          <div className="bento">
-            <article className="bento-card bento-card--lg">
-              <div className="sparkle"></div>
-              <div>
-                <span className="eyebrow">&#x26A1; Kicksoft Studio</span>
-                <h2>{template?.title || "Bienvenue chez Kicksoft"}</h2>
-                <p>{template?.subtitle || "Decouvrez nos produits tech et gadgets de derniere generation."}</p>
-                <Link href="/boutique" className="btn btn--paper">
-                  Voir la boutique
-                  <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </Link>
-                <div className="dots"><span className="active"></span><span></span><span></span></div>
-              </div>
-              <img className="product" src={featured?.[0]?.image_url || "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=900&q=80&auto=format&fit=crop"} alt={featured?.[0]?.title || "Produit vedette"} />
-            </article>
-
-            <article className="bento-card bento-card--purple">
-              <div className="sparkle"></div>
-              <span className="eyebrow">Nouveautes</span>
-              <h3 style={{ fontSize: "var(--text-xl)", lineHeight: "1.15" }}>Explorez nos<br />derniers produits</h3>
-              <Link href="/boutique" className="shop-now">
-                Voir tout
-                <svg width="12" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </Link>
-              <img className="product" src={featured?.[1]?.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80&auto=format&fit=crop"} alt="" />
-            </article>
-
-            <article className="bento-card bento-card--teal">
-              <div className="sparkle"></div>
-              <span className="eyebrow">Solutions Pro</span>
-              <h3 style={{ fontSize: "var(--text-xl)", lineHeight: "1.15" }}>Equipements<br />professionnels</h3>
-              <Link href="/solutions" className="shop-now">
-                Decouvrir
-                <svg width="12" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </Link>
-              <img className="product" src={featured?.[2]?.image_url || "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=80&auto=format&fit=crop"} alt="" />
-            </article>
-
-            <div className="bento-row">
-              <article className="bento-card bento-card--orange">
-                <div className="sparkle"></div>
-                <span className="eyebrow">Blog</span>
-                <h3 style={{ fontSize: "var(--text-lg)", lineHeight: "1.2" }}>Conseils &amp;<br />actualites</h3>
-                <Link href="/blog" className="shop-now">
-                  Lire
-                  <svg width="12" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </Link>
-              </article>
-              <article className="bento-card bento-card--green">
-                <div className="sparkle"></div>
-                <span className="eyebrow">Devis</span>
-                <h3 style={{ fontSize: "var(--text-lg)", lineHeight: "1.2" }}>Tarifs sur<br />mesure</h3>
-                <Link href="/devis" className="shop-now">
-                  Demander
-                  <svg width="12" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </Link>
-              </article>
-              <article className="bento-card bento-card--black">
-                <div className="sparkle"></div>
-                <span className="eyebrow">Support</span>
-                <h3 style={{ fontSize: "var(--text-lg)", lineHeight: "1.2" }}>Aide &amp;<br />garantie</h3>
-                <Link href="/support" className="shop-now">
-                  Acceder
-                  <svg width="12" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </Link>
-              </article>
+          <div className="features-bar__grid">
+            <div className="features-bar__item">
+              <div className="features-bar__icon">&#x26A1;</div>
+              <div><strong>Livraison Express</strong><span>24-48h partout en Tunisie</span></div>
+            </div>
+            <div className="features-bar__item">
+              <div className="features-bar__icon">&#x21BA;</div>
+              <div><strong>Retours Gratuits</strong><span>Sous 30 jours</span></div>
+            </div>
+            <div className="features-bar__item">
+              <div className="features-bar__icon">&#x2605;</div>
+              <div><strong>Garantie 2 Ans</strong><span>Sur tous nos produits</span></div>
+            </div>
+            <div className="features-bar__item">
+              <div className="features-bar__icon">&#x1F512;</div>
+              <div><strong>Paiement Securise</strong><span>100% protege</span></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TRENDING PRODUCTS */}
-      <section className="section" style={{ paddingTop: "var(--s5)" }}>
+      {/* ====== TRENDING PRODUCTS ====== */}
+      <section className="section" style={{ paddingTop: "var(--s8)" }}>
         <div className="container">
           <div className="section-head">
-            <h2>Produits tendance</h2>
+            <div>
+              <span className="section-tag">Tendance</span>
+              <h2>Produits populaires</h2>
+            </div>
             <Link href="/boutique" className="view-all">
               Voir tout
               <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -103,7 +108,7 @@ export default async function HomePage() {
           <div className="products">
             {trending && trending.length > 0 ? (
               trending.map((p) => (
-                <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} badge={p.compare_price && p.compare_price > p.price ? "Promo" : undefined} />
+                <ProductCard key={p.id} id={p.id} title={p.title} price={p.price} compare_price={p.compare_price} stock={p.stock} image_url={p.image_url} loyalty_points={p.loyalty_points} badge={p.compare_price && p.compare_price > p.price ? "Promo" : undefined} />
               ))
             ) : (
               <p style={{ gridColumn: "1/-1", textAlign: "center", color: "var(--fg-mute)" }}>
@@ -114,7 +119,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* DISCOUNT BANNERS */}
+      {/* ====== PROMO BANNERS ====== */}
       <section className="section" style={{ paddingTop: "0" }}>
         <div className="container">
           <div className="discount-row">
@@ -140,12 +145,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CATEGORIES */}
+      {/* ====== CATEGORIES ====== */}
       {categories && categories.length > 0 && (
         <section className="section" style={{ paddingTop: "var(--s5)" }}>
           <div className="container">
             <div className="section-head">
-              <h2>Parcourir par categorie</h2>
+              <div>
+                <span className="section-tag">Explorer</span>
+                <h2>Parcourir par categorie</h2>
+              </div>
               <Link href="/boutique" className="view-all">
                 Tous les produits
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -155,7 +163,7 @@ export default async function HomePage() {
               {categories.map((cat) => (
                 <Link key={cat.id} href={`/boutique?categorie=${cat.id}`} className="cat-tile">
                   <div className="pic">
-                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80&auto=format&fit=crop" alt={cat.name} />
+                    <img src={cat.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80&auto=format&fit=crop"} alt={cat.name} />
                   </div>
                   <div className="name">{cat.name}</div>
                 </Link>
@@ -165,12 +173,15 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* NOUVEAUTES */}
+      {/* ====== NOUVEAUTES ====== */}
       {nouveautes && nouveautes.length > 0 && (
         <section className="section" style={{ paddingTop: "0" }}>
           <div className="container">
             <div className="section-head">
-              <h2>Nouveautes</h2>
+              <div>
+                <span className="section-tag">Nouveau</span>
+                <h2>Derniers arrivages</h2>
+              </div>
               <Link href="/boutique" className="view-all">
                 Plus de produits
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -195,7 +206,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* BRAND STRIP */}
+      {/* ====== BRAND STRIP ====== */}
       <section className="brands">
         <div className="container">
           <div className="brand-row">
@@ -209,7 +220,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CTA PRO */}
+      {/* ====== CTA PRO ====== */}
       <section className="section">
         <div className="container">
           <div className="discount-row">
@@ -233,7 +244,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* NEWSLETTER */}
+      {/* ====== NEWSLETTER ====== */}
       <section style={{ background: "var(--paper)" }}>
         <div className="container">
           <div className="newsletter">
