@@ -55,7 +55,7 @@ export default function FidelitePage() {
 
     const defaults: Record<string, string> = {};
     ordersWithStatus.forEach((o) => {
-      if (!o.points_credited) defaults[o.id] = String(Math.floor(o.total * LOYALTY.POINTS_PER_DT));
+      if (!o.points_credited) defaults[o.id] = String(Math.floor(o.total * LOYALTY.EARN_RATE));
     });
     setEditPoints(defaults);
     setTransactions(txns);

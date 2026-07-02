@@ -2,58 +2,54 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type Commande = {
-  id: string;
-  total: number;
-  status: string;
-  created_at: string;
+  id: string; total: number; status: string; created_at: string;
+  guest_name: string | null;
   profiles?: { full_name: string } | null;
 };
+type Produit = { id: string; title: string; stock: number };
+type Ticket = { id: string; subject: string; status: string; created_at: string };
 
-type Produit = {
-  id: string;
-  title: string;
-  stock: number;
-  status: string;
+const STATUTS: Record<string, { label: string; cls: string }> = {
+  pending:   { label: "En attente", cls: "ak-badge--warning" },
+  shipped:   { label: "Expédiée",   cls: "ak-badge--info" },
+  delivered: { label: "Livrée",     cls: "ak-badge--success" },
+  cancelled: { label: "Annulée",    cls: "ak-badge--danger" },
 };
 
-type Ticket = {
-  id: string;
-  subject: string;
-  status: string;
-  created_at: string;
-};
-
-const STATUTS: Record<string, { label: string; classe: string }> = {
-  pending: { label: "En attente", classe: "bg-warning text-dark" },
-  shipped: { label: "Expediee", classe: "bg-info text-white" },
-  delivered: { label: "Livree", classe: "bg-success" },
-  cancelled: { label: "Annulee", classe: "bg-danger" },
-};
+function Counter({ value }: { value: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!value) return;
+    let i = 0;
+    const steps = 25;
+    const step = value / steps;
+    const t = setInterval(() => {
+      i += step;
+      if (i >= value) { setN(value); clearInterval(t); }
+      else setN(Math.floor(i));
+    }, 600 / steps);
+    return () => clearInterval(t);
+  }, [value]);
+  return <>{n.toLocaleString("fr-FR")}</>;
+}
 
 export default function DashboardPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ produits: 0, commandes: 0, utilisateurs: 0, tickets: 0, ventes: 0, ticketsOuverts: 0, produitsPublies: 0, stockFaible: 0 });
+  const [stats, setStats] = useState({ ventes: 0, commandes: 0, commandesAttente: 0, produits: 0, produitsPublies: 0, utilisateurs: 0, ticketsOuverts: 0, tickets: 0, stockFaible: 0 });
   const [commandesRecentes, setCommandesRecentes] = useState<Commande[]>([]);
-  const [produitsStockFaible, setProduitsStockFaible] = useState<Produit[]>([]);
-  const [ticketsRecents, setTicketsRecents] = useState<Ticket[]>([]);
+  const [stockFaible, setStockFaible] = useState<Produit[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
-  async function chargerDashboard() {
+  async function load() {
     setLoading(true);
-
     const [
-      { count: totalProduits },
-      { count: totalCommandes },
-      { count: totalUtilisateurs },
-      { count: totalTickets },
-      { count: ticketsOuverts },
-      { count: produitsPublies },
-      { data: commandes },
-      { data: ventesData },
-      { data: stockFaible },
-      { data: tickets },
+      { count: cProd }, { count: cCmd }, { count: cUsers }, { count: cTick },
+      { count: cTickOpen }, { count: cProdPub }, { count: cCmdPend },
+      { data: cmds }, { data: ventes }, { data: stock }, { data: tix },
     ] = await Promise.all([
       supabase.from("products").select("*", { count: "exact", head: true }),
       supabase.from("orders").select("*", { count: "exact", head: true }),
@@ -61,187 +57,208 @@ export default function DashboardPage() {
       supabase.from("tickets_support").select("*", { count: "exact", head: true }),
       supabase.from("tickets_support").select("*", { count: "exact", head: true }).eq("status", "open"),
       supabase.from("products").select("*", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("orders").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(5),
+      supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("orders").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(6),
       supabase.from("orders").select("total").eq("status", "delivered"),
-      supabase.from("products").select("id, title, stock, status").eq("status", "published").lt("stock", 5).order("stock", { ascending: true }).limit(5),
+      supabase.from("products").select("id, title, stock").eq("status", "published").lt("stock", 5).order("stock").limit(5),
       supabase.from("tickets_support").select("*").order("created_at", { ascending: false }).limit(5),
     ]);
-
-    const totalVentes = (ventesData ?? []).reduce((acc, o) => acc + (o.total || 0), 0);
-
-    setStats({
-      produits: totalProduits ?? 0,
-      commandes: totalCommandes ?? 0,
-      utilisateurs: totalUtilisateurs ?? 0,
-      tickets: totalTickets ?? 0,
-      ventes: totalVentes,
-      ticketsOuverts: ticketsOuverts ?? 0,
-      produitsPublies: produitsPublies ?? 0,
-      stockFaible: (stockFaible ?? []).length,
-    });
-    setCommandesRecentes(commandes ?? []);
-    setProduitsStockFaible(stockFaible ?? []);
-    setTicketsRecents(tickets ?? []);
+    const totalVentes = (ventes ?? []).reduce((a, o) => a + (o.total || 0), 0);
+    setStats({ ventes: totalVentes, commandes: cCmd ?? 0, commandesAttente: cCmdPend ?? 0, produits: cProd ?? 0, produitsPublies: cProdPub ?? 0, utilisateurs: cUsers ?? 0, ticketsOuverts: cTickOpen ?? 0, tickets: cTick ?? 0, stockFaible: (stock ?? []).length });
+    setCommandesRecentes(cmds ?? []);
+    setStockFaible(stock ?? []);
+    setTickets(tix ?? []);
     setLoading(false);
   }
 
-  useEffect(() => {
-    chargerDashboard();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  if (loading) {
-    return (
-      <div className="container-fluid mt-4">
-        <p className="text-muted text-center py-5">Chargement du tableau de bord...</p>
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 44, height: 44, border: "3px solid #e2e8f0", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.7s linear infinite", margin: "0 auto 12px" }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <p style={{ color: "#64748b", fontSize: 13 }}>Chargement...</p>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const bigStats = [
+    { label: "Chiffre d'affaires", value: stats.ventes, suffix: " DT", icon: "ti-trending-up", grad: "linear-gradient(135deg,#6366f1,#818cf8)", href: "/admin/commandes" },
+    { label: "Commandes", value: stats.commandes, icon: "ti-shopping-cart", grad: "linear-gradient(135deg,#f43f5e,#fb7185)", href: "/admin/commandes", sub: stats.commandesAttente > 0 ? `${stats.commandesAttente} en attente` : undefined },
+    { label: "Produits publiés", value: stats.produitsPublies, icon: "ti-package", grad: "linear-gradient(135deg,#0ea5e9,#38bdf8)", href: "/admin/produits", sub: `${stats.produits} total` },
+    { label: "Utilisateurs", value: stats.utilisateurs, icon: "ti-users", grad: "linear-gradient(135deg,#10b981,#34d399)", href: "/admin/utilisateurs" },
+  ];
 
   return (
-    <div className="container-fluid mt-4">
-      {/* Header */}
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <div>
-          <h5 className="fw-semibold mb-1">Tableau de bord</h5>
-          <p className="mb-0 text-muted">Vue d&apos;ensemble de votre boutique</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Welcome */}
+      <div className="ak-animate" style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)", borderRadius: 16, padding: "28px 32px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, background: "rgba(99,102,241,0.08)", borderRadius: "50%" }} />
+        <div style={{ position: "absolute", bottom: -60, right: 100, width: 140, height: 140, background: "rgba(99,102,241,0.05)", borderRadius: "50%" }} />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 20, margin: "0 0 6px" }}>Bienvenue sur KickSoft Admin 👋</h2>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>Voici un résumé de votre activité.</p>
+          </div>
+          <button onClick={load} className="ak-btn ak-btn--ghost ak-btn--sm" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff" }}>
+            <i className="ti ti-refresh" style={{ fontSize: 15 }}></i> Actualiser
+          </button>
         </div>
-        <button className="btn btn-outline-primary btn-sm" onClick={chargerDashboard}>
-          <i className="ti ti-refresh me-1"></i> Actualiser
-        </button>
       </div>
 
-      {/* Stats principales */}
-      <div className="row g-3 mb-4">
-        {[
-          { label: "Produits publies", value: stats.produitsPublies, total: stats.produits, icone: "ti-package", bg: "bg-light-primary", text: "text-primary", lien: "/admin/produits" },
-          { label: "Commandes", value: stats.commandes, icone: "ti-shopping-cart", bg: "bg-light-success", text: "text-success", lien: "/admin/commandes" },
-          { label: "Chiffre d'affaires", value: `${stats.ventes.toFixed(0)} DT`, icone: "ti-currency-dollar", bg: "bg-light-warning", text: "text-warning", lien: "/admin/commandes" },
-          { label: "Utilisateurs", value: stats.utilisateurs, icone: "ti-users", bg: "bg-light-info", text: "text-info", lien: "/admin/utilisateurs" },
-          { label: "Tickets ouverts", value: stats.ticketsOuverts, total: stats.tickets, icone: "ti-ticket", bg: "bg-light-danger", text: "text-danger", lien: "/admin/contenu/support" },
-          { label: "Stock faible", value: stats.stockFaible, icone: "ti-alert-triangle", bg: "bg-light-warning", text: "text-warning", lien: "/admin/produits" },
-        ].map((s) => (
-          <div key={s.label} className="col-sm-6 col-xl-4 col-xxl-2">
-            <a href={s.lien} className="text-decoration-none">
-              <div className="card overflow-hidden rounded-2 h-100">
-                <div className="card-body p-3">
-                  <div className="d-flex align-items-center gap-3 mb-2">
-                    <div className={`round-48 d-flex align-items-center justify-content-center rounded-circle ${s.bg} ${s.text}`}>
-                      <i className={`ti ${s.icone} fs-6`}></i>
-                    </div>
-                    <span className="text-muted" style={{ fontSize: "13px" }}>{s.label}</span>
+      {/* Big stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+        {bigStats.map((s, i) => (
+          <Link key={s.label} href={s.href} className={`ak-animate ak-animate-${i + 1}`} style={{ textDecoration: "none" }}>
+            <div className="ak-card ak-card--lift" style={{ background: s.grad, border: "none", color: "#fff", padding: "22px 22px 18px", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -20, right: -20, width: 90, height: 90, background: "rgba(255,255,255,0.08)", borderRadius: "50%" }} />
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.85 }}>{s.label}</span>
+                  <div style={{ width: 36, height: 36, background: "rgba(255,255,255,0.18)", borderRadius: 10, display: "grid", placeItems: "center" }}>
+                    <i className={`ti ${s.icon}`} style={{ fontSize: 18 }}></i>
                   </div>
-                  <h3 className="fw-semibold mb-0 text-dark">
-                    {typeof s.value === "number" ? s.value : s.value}
-                    {s.total !== undefined && (
-                      <span className="text-muted fw-normal" style={{ fontSize: "14px" }}> / {s.total}</span>
-                    )}
-                  </h3>
                 </div>
+                <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  <Counter value={Math.floor(s.value)} />{s.suffix}
+                </div>
+                {s.sub && <div style={{ fontSize: 11, opacity: 0.65, marginTop: 6 }}>{s.sub}</div>}
               </div>
-            </a>
-          </div>
+            </div>
+          </Link>
         ))}
       </div>
+      <style>{`@media(max-width:900px){.dash-grid-4{grid-template-columns:repeat(2,1fr)!important}}`}</style>
 
-      {/* Actions rapides */}
-      <div className="card mb-4">
-        <div className="card-body p-4">
-          <h6 className="fw-semibold mb-3">Actions rapides</h6>
-          <div className="d-flex flex-wrap gap-2">
-            <a href="/admin/produits" className="btn btn-primary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-plus"></i> Produit
-            </a>
-            <a href="/admin/categories" className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-category"></i> Categorie
-            </a>
-            <a href="/admin/commandes" className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-shopping-cart"></i> Commandes
-            </a>
-            <a href="/admin/contenu/blog" className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-writing"></i> Article
-            </a>
-            <a href="/admin/medias" className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-photo"></i> Medias
-            </a>
-            <a href="/admin/contenu" className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-file-text"></i> Contenu
-            </a>
-            <a href="/admin/accueil" className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-              <i className="ti ti-home"></i> Page accueil
-            </a>
+      {/* Mini stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {[
+          { label: "Tickets ouverts", value: stats.ticketsOuverts, total: stats.tickets, icon: "ti-message-circle", color: "#f59e0b", bg: "#fffbeb", href: "/admin/contenu/support" },
+          { label: "Stock faible", value: stats.stockFaible, icon: "ti-alert-triangle", color: "#ef4444", bg: "#fef2f2", href: "/admin/produits" },
+        ].map((s) => (
+          <Link key={s.label} href={s.href} style={{ textDecoration: "none" }}>
+            <div className="ak-card ak-card--lift" style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 44, height: 44, background: s.bg, borderRadius: 12, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <i className={`ti ${s.icon}`} style={{ fontSize: 20, color: s.color }}></i>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+                  {s.value}
+                  {s.total !== undefined && <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 400 }}> / {s.total}</span>}
+                </div>
+              </div>
+              {s.value > 0 && <div style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: s.color, animation: "pulse 2s infinite" }} />}
+            </div>
+          </Link>
+        ))}
+      </div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}`}</style>
+
+      {/* Quick actions */}
+      <div className="ak-card">
+        <div className="ak-card__header">
+          <div>
+            <h2 className="ak-card__title">Actions rapides</h2>
           </div>
+        </div>
+        <div className="ak-card__body" style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {[
+            { href: "/admin/produits", icon: "ti-plus", label: "Nouveau produit", primary: true },
+            { href: "/admin/categories", icon: "ti-category", label: "Catégorie" },
+            { href: "/admin/commandes", icon: "ti-shopping-cart", label: "Commandes" },
+            { href: "/admin/devis", icon: "ti-file-invoice", label: "Devis" },
+            { href: "/admin/contenu/blog", icon: "ti-writing", label: "Article" },
+            { href: "/admin/medias", icon: "ti-photo", label: "Médias" },
+            { href: "/admin/accueil", icon: "ti-home", label: "Page accueil" },
+          ].map((a) => (
+            <Link key={a.label} href={a.href} className={`ak-btn ${a.primary ? "ak-btn--primary" : "ak-btn--ghost"} ak-btn--sm`}>
+              <i className={`ti ${a.icon}`}></i> {a.label}
+            </Link>
+          ))}
         </div>
       </div>
 
-      <div className="row g-4">
-        {/* Commandes recentes */}
-        <div className="col-lg-8">
-          <div className="card h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h6 className="fw-semibold mb-0">Commandes recentes</h6>
-                <a href="/admin/commandes" className="btn btn-sm btn-outline-primary">Voir tout</a>
-              </div>
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Client</th>
-                      <th>Total</th>
-                      <th>Statut</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commandesRecentes.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center text-muted py-4">
-                          Aucune commande pour le moment
+      {/* Bottom row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 20 }}>
+        {/* Commandes récentes */}
+        <div className="ak-card">
+          <div className="ak-card__header">
+            <div>
+              <h2 className="ak-card__title">Commandes récentes</h2>
+              <p className="ak-card__subtitle">Les 6 dernières commandes</p>
+            </div>
+            <Link href="/admin/commandes" className="ak-btn ak-btn--ghost ak-btn--sm">Voir tout →</Link>
+          </div>
+          <div className="ak-card__body" style={{ padding: 0 }}>
+            <div className="ak-table-wrap">
+              <table className="ak-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Total</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commandesRecentes.length === 0 ? (
+                    <tr><td colSpan={5} style={{ textAlign: "center", color: "#94a3b8", padding: 32 }}>Aucune commande</td></tr>
+                  ) : commandesRecentes.map((c) => {
+                    const name = c.profiles?.full_name ?? c.guest_name ?? "Inconnu";
+                    const s = STATUTS[c.status] ?? { label: c.status, cls: "ak-badge--muted" };
+                    return (
+                      <tr key={c.id}>
+                        <td><span className="ak-cell-mono">#{c.id.slice(0,8)}</span></td>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#818cf8)", display: "grid", placeItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{name}</div>
+                              {!c.profiles?.full_name && c.guest_name && <div style={{ fontSize: 10, color: "#94a3b8" }}>Invité</div>}
+                            </div>
+                          </div>
                         </td>
+                        <td><span className="ak-cell-bold">{c.total} DT</span></td>
+                        <td><span className={`ak-badge ak-badge--dot ${s.cls}`}>{s.label}</span></td>
+                        <td><span className="ak-cell-muted">{new Date(c.created_at).toLocaleDateString("fr-FR")}</span></td>
                       </tr>
-                    ) : (
-                      commandesRecentes.map((c) => (
-                        <tr key={c.id}>
-                          <td><span className="fw-semibold">#{c.id.slice(0, 8)}</span></td>
-                          <td>{c.profiles?.full_name ?? "Inconnu"}</td>
-                          <td className="fw-semibold">{c.total} DT</td>
-                          <td>
-                            <span className={`badge rounded-3 fw-semibold ${STATUTS[c.status]?.classe ?? "bg-secondary"}`}>
-                              {STATUTS[c.status]?.label ?? c.status}
-                            </span>
-                          </td>
-                          <td className="text-muted">{new Date(c.created_at).toLocaleDateString("fr-FR")}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        {/* Colonne droite */}
-        <div className="col-lg-4">
-          {/* Alertes stock */}
-          <div className="card mb-4">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h6 className="fw-semibold mb-0">
-                  <i className="ti ti-alert-triangle text-warning me-1"></i>
-                  Stock faible
-                </h6>
+        {/* Right column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Stock faible */}
+          <div className="ak-card">
+            <div className="ak-card__header">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 30, height: 30, background: "#fef2f2", borderRadius: 8, display: "grid", placeItems: "center" }}>
+                  <i className="ti ti-alert-triangle" style={{ fontSize: 15, color: "#ef4444" }}></i>
+                </div>
+                <h2 className="ak-card__title">Stock faible</h2>
               </div>
-              {produitsStockFaible.length === 0 ? (
-                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>Tous les stocks sont suffisants.</p>
+            </div>
+            <div className="ak-card__body">
+              {stockFaible.length === 0 ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#ecfdf5", borderRadius: 8, fontSize: 13, color: "#065f46" }}>
+                  <i className="ti ti-check"></i> Tous les stocks OK
+                </div>
               ) : (
-                <div className="d-flex flex-column gap-2">
-                  {produitsStockFaible.map((p) => (
-                    <div key={p.id} className="d-flex align-items-center justify-content-between p-2 rounded" style={{ background: "#fff5f5" }}>
-                      <span style={{ fontSize: "13px" }} className="fw-semibold">{p.title}</span>
-                      <span className={`badge ${p.stock === 0 ? "bg-danger" : "bg-warning text-dark"}`}>
-                        {p.stock === 0 ? "Rupture" : `${p.stock} restant(s)`}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {stockFaible.map((p) => (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", borderRadius: 8, background: p.stock === 0 ? "#fef2f2" : "#fffbeb" }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}>{p.title}</span>
+                      <span className={`ak-badge ${p.stock === 0 ? "ak-badge--danger" : "ak-badge--warning"}`}>
+                        {p.stock === 0 ? "Rupture" : `${p.stock} restant`}
                       </span>
                     </div>
                   ))}
@@ -250,22 +267,27 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Tickets recents */}
-          <div className="card">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h6 className="fw-semibold mb-0">Tickets recents</h6>
-                <a href="/admin/contenu/support" className="btn btn-sm btn-outline-primary">Voir</a>
+          {/* Tickets */}
+          <div className="ak-card">
+            <div className="ak-card__header">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 30, height: 30, background: "#ede9fe", borderRadius: 8, display: "grid", placeItems: "center" }}>
+                  <i className="ti ti-ticket" style={{ fontSize: 15, color: "#7c3aed" }}></i>
+                </div>
+                <h2 className="ak-card__title">Tickets récents</h2>
               </div>
-              {ticketsRecents.length === 0 ? (
-                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>Aucun ticket.</p>
+              <Link href="/admin/contenu/support" className="ak-btn ak-btn--ghost ak-btn--sm">Voir</Link>
+            </div>
+            <div className="ak-card__body">
+              {tickets.length === 0 ? (
+                <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, textAlign: "center" }}>Aucun ticket</p>
               ) : (
-                <div className="d-flex flex-column gap-2">
-                  {ticketsRecents.map((t) => (
-                    <div key={t.id} className="d-flex align-items-center justify-content-between">
-                      <span style={{ fontSize: "13px" }} className="text-truncate me-2">{t.subject}</span>
-                      <span className={`badge rounded-3 ${t.status === "open" ? "bg-warning text-dark" : "bg-success"}`} style={{ fontSize: "10px", whiteSpace: "nowrap" }}>
-                        {t.status === "open" ? "Ouvert" : "Ferme"}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {tickets.map((t, i) => (
+                    <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < tickets.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                      <span style={{ fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8, flex: 1, color: "#334155" }}>{t.subject}</span>
+                      <span className={`ak-badge ${t.status === "open" ? "ak-badge--warning" : "ak-badge--success"}`}>
+                        {t.status === "open" ? "Ouvert" : "Fermé"}
                       </span>
                     </div>
                   ))}

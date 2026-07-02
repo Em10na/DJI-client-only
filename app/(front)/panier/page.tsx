@@ -12,23 +12,28 @@ export default function PanierPage() {
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState("");
   const [succes, setSucces] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [pointsBalance, setPointsBalance] = useState(0);
   const [usePoints, setUsePoints] = useState(false);
+  const [pointsPercentage, setPointsPercentage] = useState(100);
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [guestForm, setGuestForm] = useState({ nom: "", prenom: "", adresse: "", telephone: "" });
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    async function loadLoyalty() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: txns } = await supabase.from("loyalty_transactions").select("points").eq("user_id", user.id);
+    async function loadUser() {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      setUser(u);
+      if (!u) return;
+      const { data: txns } = await supabase.from("loyalty_transactions").select("points").eq("user_id", u.id);
       setPointsBalance((txns ?? []).reduce((s: number, t: { points: number }) => s + t.points, 0));
     }
-    loadLoyalty();
+    loadUser();
   }, []);
 
-  const pointsDiscount = usePoints ? Math.min(pointsBalance * LOYALTY.POINTS_PER_DT, total) : 0;
-  const pointsUsed = usePoints ? Math.min(pointsBalance, Math.floor(total / LOYALTY.POINTS_PER_DT)) : 0;
+  const pointsToUse = usePoints ? Math.floor(pointsBalance * pointsPercentage / 100) : 0;
+  const pointsDiscount = usePoints ? Math.min(pointsToUse * LOYALTY.REDEEM_RATE, total) : 0;
   const livraison = total >= 50 ? 0 : 7;
   const grandTotal = Math.max(0, total - pointsDiscount + livraison);
 
@@ -36,9 +41,9 @@ export default function PanierPage() {
     setLoading(true);
     setErreur("");
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      router.push("/auth/connexion");
+      setIsGuest(true);
+      setLoading(false);
       return;
     }
 
@@ -68,14 +73,51 @@ export default function PanierPage() {
       return;
     }
 
-    if (usePoints && pointsUsed > 0) {
+    if (usePoints && pointsToUse > 0) {
       await supabase.from("loyalty_transactions").insert({
         user_id: user.id,
         order_id: order.id,
-        points: -pointsUsed,
+        points: -pointsToUse,
         type: "redeem_reduction",
-        description: `Reduction ${pointsDiscount.toFixed(2)} DT - commande #${order.id.slice(0, 8)} (${pointsUsed} pts utilises)`,
+        description: `Reduction ${pointsDiscount.toFixed(2)} DT - commande #${order.id.slice(0, 8)} (${pointsToUse} pts utilises)`,
       });
+    }
+
+    clearCart();
+    setSucces(true);
+    setLoading(false);
+  }
+
+  async function passerCommandeGuest() {
+    setLoading(true);
+    setErreur("");
+
+    if (!guestForm.nom.trim() || !guestForm.prenom.trim() || !guestForm.adresse.trim() || !guestForm.telephone.trim()) {
+      setErreur("Veuillez remplir tous les champs.");
+      setLoading(false);
+      return;
+    }
+
+    const res = await fetch("/api/orders/guest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        guest_name: `${guestForm.prenom.trim()} ${guestForm.nom.trim()}`,
+        guest_phone: guestForm.telephone.trim(),
+        guest_address: guestForm.adresse.trim(),
+        items: items.map((item) => ({
+          product_id: item.id,
+          quantity: item.qty,
+          unit_price: item.price,
+        })),
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setErreur(data.error || "Erreur lors de la commande.");
+      setLoading(false);
+      return;
     }
 
     clearCart();
@@ -96,10 +138,11 @@ export default function PanierPage() {
             <div style={{ fontSize: "64px", marginBottom: "var(--s5)" }}>&#x2713;</div>
             <h2 style={{ fontSize: "var(--text-2xl)", marginBottom: "var(--s4)" }}>Merci pour votre commande !</h2>
             <p style={{ color: "var(--fg-soft)", marginBottom: "var(--s6)", maxWidth: "48ch", margin: "0 auto var(--s6)" }}>
-              Votre commande a ete enregistree avec succes. Vous pouvez suivre son statut dans votre espace client.
+              Votre commande a ete enregistree avec succes.
+              {user ? " Vous pouvez suivre son statut dans votre espace client." : " Nous vous contacterons pour confirmer la livraison."}
             </p>
             <div style={{ display: "flex", gap: "var(--s4)", justifyContent: "center" }}>
-              <Link href="/compte/commandes" className="btn btn--indigo">Mes commandes</Link>
+              {user && <Link href="/compte/commandes" className="btn btn--indigo">Mes commandes</Link>}
               <Link href="/boutique" className="btn btn--ghost">Continuer les achats</Link>
             </div>
           </div>
@@ -228,8 +271,9 @@ export default function PanierPage() {
                     Livraison gratuite a partir de 50 DT ({(50 - total).toFixed(2)} DT restants)
                   </div>
                 )}
-                {/* Points fidelite */}
-                {pointsBalance > 0 && (
+
+                {/* Points fidelite - seulement pour utilisateurs connectes */}
+                {user && pointsBalance > 0 && (
                   <div style={{ padding: "var(--s4)", marginTop: "var(--s2)", background: usePoints ? "#f0fdf4" : "var(--bg)", border: `1px solid ${usePoints ? "#bbf7d0" : "var(--rule)"}`, borderRadius: "var(--r)" }}>
                     <label style={{ display: "flex", alignItems: "center", gap: "var(--s3)", cursor: "pointer", fontSize: "var(--text-sm)" }}>
                       <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)}
@@ -237,15 +281,42 @@ export default function PanierPage() {
                       <div>
                         <div style={{ fontWeight: 600 }}>Utiliser mes points de fidelite</div>
                         <div style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)" }}>
-                          {pointsBalance} pts disponibles = <strong style={{ color: "#16a34a" }}>{Math.min(pointsBalance, Math.floor(total)).toFixed(2)} DT de reduction</strong>
+                          {pointsBalance} pts disponibles = <strong style={{ color: "#16a34a" }}>{Math.min(pointsBalance * LOYALTY.REDEEM_RATE, total).toFixed(2)} DT de reduction max</strong>
                         </div>
                       </div>
                     </label>
+                    {usePoints && (
+                      <div style={{ marginTop: "var(--s3)", display: "flex", gap: "var(--s2)", flexWrap: "wrap" }}>
+                        {[25, 50, 75, 100].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => setPointsPercentage(pct)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: "var(--r)",
+                              border: pointsPercentage === pct ? "2px solid var(--indigo)" : "1px solid var(--rule)",
+                              background: pointsPercentage === pct ? "var(--indigo-soft)" : "white",
+                              color: pointsPercentage === pct ? "var(--indigo)" : "var(--fg-soft)",
+                              fontWeight: pointsPercentage === pct ? 700 : 400,
+                              fontSize: "var(--text-xs)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {pct}%
+                          </button>
+                        ))}
+                        <span style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", alignSelf: "center" }}>
+                          ({pointsToUse} pts = {Math.min(pointsToUse * LOYALTY.REDEEM_RATE, total).toFixed(2)} DT)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
+
                 {pointsDiscount > 0 && (
                   <div className="cart-line" style={{ marginTop: "var(--s2)" }}>
-                    <span>Reduction fidelite ({pointsUsed} pts)</span>
+                    <span>Reduction fidelite ({pointsToUse} pts)</span>
                     <span style={{ color: "#16a34a", fontWeight: 600 }}>-{pointsDiscount.toFixed(2)} DT</span>
                   </div>
                 )}
@@ -254,14 +325,77 @@ export default function PanierPage() {
                   <span>{grandTotal.toFixed(2)} DT</span>
                 </div>
 
-                <button
-                  className="btn btn--indigo btn--block"
-                  onClick={passerCommande}
-                  disabled={loading || items.length === 0}
-                  style={{ marginTop: "var(--s3)" }}
-                >
-                  {loading ? "Traitement..." : "Passer la commande"} &rarr;
-                </button>
+                {/* Formulaire invite */}
+                {isGuest && !user && (
+                  <div style={{ marginTop: "var(--s4)", padding: "var(--s4)", background: "var(--bg)", borderRadius: "var(--r)", border: "1px solid var(--rule)" }}>
+                    <h4 style={{ fontSize: "var(--text-sm)", fontWeight: 700, marginBottom: "var(--s3)" }}>Vos informations de livraison</h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--s3)" }}>
+                      <div>
+                        <label style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", display: "block", marginBottom: "4px" }}>Prenom *</label>
+                        <input
+                          type="text"
+                          placeholder="Prenom"
+                          value={guestForm.prenom}
+                          onChange={(e) => setGuestForm({ ...guestForm, prenom: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule)", borderRadius: "var(--r)", fontSize: "var(--text-sm)" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", display: "block", marginBottom: "4px" }}>Nom *</label>
+                        <input
+                          type="text"
+                          placeholder="Nom"
+                          value={guestForm.nom}
+                          onChange={(e) => setGuestForm({ ...guestForm, nom: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule)", borderRadius: "var(--r)", fontSize: "var(--text-sm)" }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ marginTop: "var(--s3)" }}>
+                      <label style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", display: "block", marginBottom: "4px" }}>Adresse *</label>
+                      <input
+                        type="text"
+                        placeholder="Adresse complete"
+                        value={guestForm.adresse}
+                        onChange={(e) => setGuestForm({ ...guestForm, adresse: e.target.value })}
+                        style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule)", borderRadius: "var(--r)", fontSize: "var(--text-sm)" }}
+                      />
+                    </div>
+                    <div style={{ marginTop: "var(--s3)" }}>
+                      <label style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", display: "block", marginBottom: "4px" }}>Telephone *</label>
+                      <input
+                        type="tel"
+                        placeholder="+216 XX XXX XXX"
+                        value={guestForm.telephone}
+                        onChange={(e) => setGuestForm({ ...guestForm, telephone: e.target.value })}
+                        style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule)", borderRadius: "var(--r)", fontSize: "var(--text-sm)" }}
+                      />
+                    </div>
+                    <button
+                      className="btn btn--indigo btn--block"
+                      onClick={passerCommandeGuest}
+                      disabled={loading}
+                      style={{ marginTop: "var(--s4)" }}
+                    >
+                      {loading ? "Traitement..." : "Confirmer la commande"} &rarr;
+                    </button>
+                    <p style={{ fontSize: "var(--text-xs)", color: "var(--fg-mute)", marginTop: "var(--s3)", textAlign: "center" }}>
+                      Vous avez un compte ?{" "}
+                      <Link href="/auth/connexion" style={{ color: "var(--indigo)" }}>Se connecter</Link>
+                    </p>
+                  </div>
+                )}
+
+                {!isGuest && (
+                  <button
+                    className="btn btn--indigo btn--block"
+                    onClick={passerCommande}
+                    disabled={loading || items.length === 0}
+                    style={{ marginTop: "var(--s3)" }}
+                  >
+                    {loading ? "Traitement..." : "Passer la commande"} &rarr;
+                  </button>
+                )}
 
                 <p style={{
                   marginTop: "var(--s5)", fontSize: 11,

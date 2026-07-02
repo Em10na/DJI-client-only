@@ -29,7 +29,14 @@ export default async function BoutiquePage({ searchParams }: Props) {
     case "prix-asc": query = query.order("price", { ascending: true }); break;
     case "prix-desc": query = query.order("price", { ascending: false }); break;
     case "nom": query = query.order("title", { ascending: true }); break;
-    default: query = query.order("created_at", { ascending: false }); break;
+    case "categorie":
+      query = query.order("category_id", { ascending: true });
+      query = query.order("display_order", { ascending: true });
+      break;
+    default:
+      query = query.order("display_order", { ascending: true });
+      query = query.order("created_at", { ascending: false });
+      break;
   }
 
   const { data: produits, count: totalCount } = await query.range(debut, fin);
@@ -112,6 +119,12 @@ export default async function BoutiquePage({ searchParams }: Props) {
                   <input type="radio" name="tri" checked={params.tri === "nom"} readOnly />
                   <Link href={buildUrl({ tri: "nom", page: "1" })} style={{ color: "inherit", textDecoration: "none" }}>
                     Nom A-Z
+                  </Link>
+                </label>
+                <label>
+                  <input type="radio" name="tri" checked={params.tri === "categorie"} readOnly />
+                  <Link href={buildUrl({ tri: "categorie", page: "1" })} style={{ color: "inherit", textDecoration: "none" }}>
+                    Par categorie
                   </Link>
                 </label>
               </div>

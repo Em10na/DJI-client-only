@@ -1,185 +1,188 @@
-import Script from "next/script";
+"use client";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type NavItem = { href: string; icon: string; label: string; exact?: boolean };
+type NavGroup = { section: string; items: NavItem[] };
+
+const NAV: NavGroup[] = [
+  {
+    section: "Tableau de bord",
+    items: [
+      { href: "/admin", icon: "ti-layout-dashboard", label: "Dashboard", exact: true },
+    ],
+  },
+  {
+    section: "Boutique",
+    items: [
+      { href: "/admin/produits", icon: "ti-package", label: "Produits" },
+      { href: "/admin/categories", icon: "ti-category", label: "Catégories" },
+      { href: "/admin/commandes", icon: "ti-shopping-cart", label: "Commandes" },
+      { href: "/admin/devis", icon: "ti-file-invoice", label: "Devis" },
+    ],
+  },
+  {
+    section: "Clients",
+    items: [
+      { href: "/admin/utilisateurs", icon: "ti-users", label: "Utilisateurs" },
+      { href: "/admin/fidelite", icon: "ti-star", label: "Fidélité" },
+    ],
+  },
+  {
+    section: "Contenu",
+    items: [
+      { href: "/admin/contenu", icon: "ti-file-text", label: "Pages & Blog" },
+      { href: "/admin/medias", icon: "ti-photo", label: "Médias" },
+      { href: "/admin/accueil", icon: "ti-home", label: "Page accueil" },
+    ],
+  },
+];
+
+const PAGE_TITLES: Record<string, string> = {
+  "/admin": "Dashboard",
+  "/admin/produits": "Produits",
+  "/admin/categories": "Catégories",
+  "/admin/commandes": "Commandes",
+  "/admin/devis": "Devis",
+  "/admin/utilisateurs": "Utilisateurs",
+  "/admin/fidelite": "Fidélité",
+  "/admin/contenu": "Contenu",
+  "/admin/contenu/blog": "Blog",
+  "/admin/contenu/faq": "FAQ",
+  "/admin/contenu/newsletter": "Newsletter",
+  "/admin/contenu/pages": "Pages",
+  "/admin/contenu/support": "Support",
+  "/admin/medias": "Médias",
+  "/admin/accueil": "Page accueil",
+};
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminName, setAdminName] = useState("Admin");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("profiles").select("full_name").eq("id", user.id).single()
+        .then(({ data }) => { if (data?.full_name) setAdminName(data.full_name); });
+    });
+  }, []);
+
+  function isActive(href: string, exact?: boolean) {
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
+  }
+
+  const currentTitle = PAGE_TITLES[pathname] ?? "Admin";
+  const initials = adminName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
   return (
     <>
-      <link rel="stylesheet" href="/assets/css/styles.min.css" />
-      <div
-        className="page-wrapper"
-        id="main-wrapper"
-        data-layout="vertical"
-        data-navbarbg="skin6"
-        data-sidebartype="full"
-        data-sidebar-position="fixed"
-        data-header-position="fixed"
-      >
-        <aside className="left-sidebar">
-          <div>
-            <div className="brand-logo d-flex align-items-center justify-content-between">
-              <a href="/admin" className="text-nowrap logo-img">
-                <span style={{ fontSize: "24px", fontWeight: "bold", color: "#5d87ff" }}>
-                  KICKSOFT
-                </span>
-              </a>
+      <link rel="stylesheet" href="/assets/css/admin-theme.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;600&display=swap" />
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+      <div className="admin-shell">
+        {/* Backdrop mobile */}
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 99, backdropFilter: "blur(2px)" }}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
+          {/* Logo */}
+          <div className="admin-sidebar__logo">
+            <Link href="/admin" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+              <div className="admin-sidebar__logo-mark">K</div>
+              <span className="admin-sidebar__logo-text">KICK<span>SOFT</span></span>
+            </Link>
+          </div>
+
+          {/* Navigation */}
+          <nav className="admin-sidebar__nav">
+            {NAV.map((group) => (
+              <div key={group.section} className="admin-sidebar__section">
+                <div className="admin-sidebar__section-label">{group.section}</div>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`admin-nav-item${isActive(item.href, item.exact) ? " active" : ""}`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <i className={`ti ${item.icon}`}></i>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            ))}
+
+            <div className="admin-sidebar__section" style={{ marginTop: 8 }}>
+              <div className="admin-sidebar__section-label">Boutique</div>
+              <Link href="/" className="admin-nav-item" target="_blank">
+                <i className="ti ti-external-link"></i>
+                <span>Voir la boutique</span>
+              </Link>
+              <Link href="/api/auth/signout" className="admin-nav-item admin-nav-item--danger">
+                <i className="ti ti-logout"></i>
+                <span>Déconnexion</span>
+              </Link>
             </div>
-            <nav className="sidebar-nav scroll-sidebar" data-simplebar="">
-              <ul id="sidebarnav">
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">HOME</span>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin">
-                    <span><i className="ti ti-layout-dashboard"></i></span>
-                    <span className="hide-menu">Dashboard</span>
-                  </a>
-                </li>
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">KICKSOFT</span>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/produits">
-                    <span><i className="ti ti-package"></i></span>
-                    <span className="hide-menu">Produits</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/categories">
-                    <span><i className="ti ti-category"></i></span>
-                    <span className="hide-menu">Categories</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/commandes">
-                    <span><i className="ti ti-shopping-cart"></i></span>
-                    <span className="hide-menu">Commandes</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/devis">
-                    <span><i className="ti ti-file-invoice"></i></span>
-                    <span className="hide-menu">Devis</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/fidelite">
-                    <span><i className="ti ti-star"></i></span>
-                    <span className="hide-menu">Fidelite</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/utilisateurs">
-                    <span><i className="ti ti-users"></i></span>
-                    <span className="hide-menu">Utilisateurs</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/contenu">
-                    <span><i className="ti ti-file-text"></i></span>
-                    <span className="hide-menu">Contenu</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/medias">
-                    <span><i className="ti ti-photo"></i></span>
-                    <span className="hide-menu">Medias</span>
-                  </a>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/admin/accueil">
-                    <span><i className="ti ti-home"></i></span>
-                    <span className="hide-menu">Page accueil</span>
-                  </a>
-                </li>
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">AUTH</span>
-                </li>
-                <li className="sidebar-item">
-                  <a className="sidebar-link" href="/api/auth/signout">
-                    <span><i className="ti ti-logout"></i></span>
-                    <span className="hide-menu">Deconnexion</span>
-                  </a>
-                </li>
-              </ul>
-            </nav>
+          </nav>
+
+          {/* User */}
+          <div className="admin-sidebar__footer">
+            <div className="admin-sidebar__user">
+              <div className="admin-sidebar__avatar">{initials}</div>
+              <div className="admin-sidebar__user-info">
+                <div className="admin-sidebar__user-name">{adminName}</div>
+                <div className="admin-sidebar__user-role">Administrateur</div>
+              </div>
+            </div>
           </div>
         </aside>
 
-        <div className="body-wrapper">
-          <header className="app-header">
-            <nav className="navbar navbar-expand-lg navbar-light">
-              <ul className="navbar-nav">
-                <li className="nav-item d-block d-xl-none">
-                  <a className="nav-link sidebartoggler nav-icon-hover" href="#">
-                    <i className="ti ti-menu-2"></i>
-                  </a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link nav-icon-hover" href="#">
-                    <i className="ti ti-bell-ringing"></i>
-                    <div className="notification bg-primary rounded-circle"></div>
-                  </a>
-                </li>
-              </ul>
-              <div className="navbar-collapse justify-content-end px-0">
-                <ul className="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-                  <a href="/" className="btn btn-primary me-3">
-                    Voir la boutique
-                  </a>
-                  <li className="nav-item dropdown">
-                    <a
-                      className="nav-link nav-icon-hover"
-                      href="#"
-                      id="drop2"
-                      data-bs-toggle="dropdown"
-                    >
-                      <div
-                        style={{
-                          width: 35,
-                          height: 35,
-                          borderRadius: "50%",
-                          background: "#5d87ff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "white",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        A
-                      </div>
-                    </a>
-                    <div className="dropdown-menu dropdown-menu-end dropdown-menu-animate-up">
-                      <div className="message-body">
-                        <a
-                          href="/api/auth/signout"
-                          className="btn btn-outline-primary mx-3 mt-2 d-block"
-                        >
-                          Deconnexion
-                        </a>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </nav>
+        {/* Main */}
+        <div className="admin-main">
+          {/* Header */}
+          <header className="admin-header">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              style={{ display: "none", padding: 8, borderRadius: 8, border: "none", background: "var(--a-bg)", cursor: "pointer", fontSize: 20, color: "var(--a-ink)" }}
+              className="admin-mobile-toggle"
+            >
+              <i className="ti ti-menu-2"></i>
+            </button>
+            <div className="admin-header__title">{currentTitle}</div>
+            <div className="admin-header__actions">
+              <Link href="/" className="admin-header__btn" target="_blank">
+                <i className="ti ti-external-link"></i>
+                Boutique
+              </Link>
+            </div>
           </header>
-          <div className="container-fluid">{children}</div>
+
+          <style>{`
+            @media (max-width: 768px) {
+              .admin-mobile-toggle { display: flex !important; }
+            }
+          `}</style>
+
+          {/* Content */}
+          <main className="admin-content">
+            {children}
+          </main>
         </div>
       </div>
-
-      <Script src="/assets/libs/jquery/dist/jquery.min.js" strategy="afterInteractive" />
-      <Script src="/assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
-      <Script src="/assets/js/sidebarmenu.js" strategy="lazyOnload" />
-      <Script src="/assets/js/app.min.js" strategy="lazyOnload" />
-      <Script src="/assets/libs/apexcharts/dist/apexcharts.min.js" strategy="lazyOnload" />
-      <Script src="/assets/libs/simplebar/dist/simplebar.js" strategy="lazyOnload" />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import ChatBot from "./components/ChatBot";
 import { CartProvider } from "@/lib/cart";
 import Script from "next/script";
 
@@ -22,6 +23,7 @@ export default function FrontLayout({ children }: { children: React.ReactNode })
       <Header />
       <main id="main">{children}</main>
       <Footer />
+      <ChatBot />
 
       <Script src="/front/js/main.js" strategy="afterInteractive" />
     </CartProvider>

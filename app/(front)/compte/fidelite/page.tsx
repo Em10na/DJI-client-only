@@ -60,7 +60,7 @@ export default function FidelitePage() {
             points de fidelite
           </div>
           <div style={{ marginTop: "var(--s5)", fontSize: "var(--text-sm)", color: "rgba(255,255,255,0.4)" }}>
-            Gagnez {LOYALTY.POINTS_PER_DT} point par DT depense. Utilisez vos points pour reduire le prix de vos commandes.
+            Gagnez 1 point pour chaque 100 DT depenses. 1 point = 100 DT de reduction sur vos commandes.
           </div>
         </div>
       </div>

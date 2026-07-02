@@ -24,7 +24,6 @@ export default function Footer() {
             <h4>Boutique</h4>
             <ul>
               <li><Link href="/boutique">Tous les produits</Link></li>
-              <li><Link href="/solutions">Solutions pro</Link></li>
               <li><Link href="/comparer">Comparer</Link></li>
               <li><Link href="/devis">Demander un devis</Link></li>
             </ul>
@@ -41,7 +40,6 @@ export default function Footer() {
           <div className="footer-col">
             <h4>Ressources</h4>
             <ul>
-              <li><Link href="/blog">Blog</Link></li>
               <li><Link href="/revendeurs">Revendeurs</Link></li>
             </ul>
           </div>

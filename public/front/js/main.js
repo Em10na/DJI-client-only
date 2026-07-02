@@ -1,5 +1,15 @@
 // Sprylo — light interaction (no framework)
 (function () {
+  // Header scroll shadow
+  const header = document.querySelector('.site-header');
+  const navBar = document.querySelector('.nav-bar');
+  function onScroll() {
+    const scrolled = window.scrollY > 60;
+    header && header.classList.toggle('site-header--scrolled', scrolled);
+    navBar && navBar.classList.toggle('nav-bar--scrolled', scrolled);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
   // Mobile drawer
   const drawer = document.getElementById('drawer');
   const toggle = document.querySelector('.nav-toggle');

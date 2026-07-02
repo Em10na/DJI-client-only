@@ -3,6 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductCard from "../../components/ProductCard";
 import ProductActions from "../../components/ProductActions";
+import ProductGallery from "../../components/ProductGallery";
+import ReviewForm from "../../components/ReviewForm";
+
+function Stars({ value, size = 16 }: { value: number; size?: number }) {
+  return (
+    <span className="stars" style={{ fontSize: size }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= Math.round(value) ? "" : "star--empty"}>★</span>
+      ))}
+    </span>
+  );
+}
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -18,25 +30,19 @@ export default async function ProduitPage({ params }: Props) {
 
   if (!produit) notFound();
 
-  const { data: similaires } = await supabase
-    .from("products")
-    .select("*")
-    .eq("status", "published")
-    .neq("id", id)
-    .eq("category_id", produit.category_id || "")
-    .limit(5);
+  const [{ data: similaires }, { data: accessoires }, { data: media }, { data: reviews }] = await Promise.all([
+    supabase.from("products").select("*").eq("status", "published").neq("id", id).eq("category_id", produit.category_id || "").limit(5),
+    supabase.from("products").select("*").eq("status", "published").neq("id", id).neq("category_id", produit.category_id || "").limit(4),
+    supabase.from("product_media").select("*").eq("product_id", id).order("position"),
+    supabase.from("reviews").select("id, author_name, rating, comment, sentiment, created_at").eq("product_id", id).order("created_at", { ascending: false }).limit(50),
+  ]);
 
-  const { data: accessoires } = await supabase
-    .from("products")
-    .select("*")
-    .eq("status", "published")
-    .neq("id", id)
-    .neq("category_id", produit.category_id || "")
-    .limit(4);
+  const avgRating = reviews && reviews.length > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
 
   const onSale = produit.compare_price && produit.compare_price > produit.price;
   const remise = onSale ? Math.round(((produit.compare_price - produit.price) / produit.compare_price) * 100) : 0;
-  const img = produit.image_url || "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=900&q=80&auto=format&fit=crop";
 
   return (
     <div className="container">
@@ -51,11 +57,7 @@ export default async function ProduitPage({ params }: Props) {
 
       <section className="product-detail">
         {/* Gallery */}
-        <div className="gallery">
-          <figure className="gallery-main">
-            <img src={img} alt={produit.title} />
-          </figure>
-        </div>
+        <ProductGallery media={media ?? []} fallbackImage={produit.image_url} productTitle={produit.title} />
 
         {/* Info */}
         <div className="pdp-info">
@@ -65,6 +67,16 @@ export default async function ProduitPage({ params }: Props) {
           <h1>{produit.title}</h1>
 
           <div className="rating-row">
+            {reviews && reviews.length > 0 && (
+              <>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <Stars value={avgRating} />
+                  <strong>{avgRating.toFixed(1)}</strong>
+                  <span style={{ color: "var(--fg-mute)", fontSize: "var(--text-sm)" }}>({reviews.length} avis)</span>
+                </span>
+                <span style={{ color: "var(--rule-strong)" }}>|</span>
+              </>
+            )}
             <span style={{ color: "var(--emerald)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <span style={{ width: "6px", height: "6px", background: produit.stock > 0 ? "var(--emerald)" : "var(--rose)", borderRadius: "999px", display: "inline-block" }}></span>
               {produit.stock > 0 ? `En stock - ${produit.stock} articles` : "Rupture de stock"}
@@ -147,10 +159,55 @@ export default async function ProduitPage({ params }: Props) {
             )}
             <div style={{ marginTop: "var(--s5)", display: "flex", gap: "var(--s3)" }}>
               <Link href="/comparer" className="btn btn--ghost">Comparer ce produit</Link>
-              <Link href="/devis" className="btn btn--ghost">Demander un devis</Link>
+              <Link href={`/devis?produit=${encodeURIComponent(produit.title)}&ref=${produit.id.slice(0, 8)}&prix=${produit.price}`} className="btn btn--ghost">Demander un devis</Link>
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ====== AVIS CLIENTS — feedback, rating & sentiment ====== */}
+      <section className="reviews-section">
+        <div className="section-head">
+          <h2>Avis clients</h2>
+        </div>
+
+        {reviews && reviews.length > 0 ? (
+          <>
+            <div className="reviews-summary">
+              <span className="reviews-summary__score">{avgRating.toFixed(1)}</span>
+              <div className="reviews-summary__meta">
+                <Stars value={avgRating} size={20} />
+                <span className="reviews-summary__count">
+                  Basé sur {reviews.length} avis client{reviews.length > 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+
+            <div className="review-list">
+              {reviews.map((r) => (
+                <article key={r.id} className="review-card">
+                  <div className="review-card__head">
+                    <span className="review-card__author">{r.author_name}</span>
+                    <Stars value={r.rating} size={13} />
+                    <span className="review-card__date">
+                      {new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                    </span>
+                    <span className={`sentiment-badge sentiment-badge--${r.sentiment}`}>
+                      {r.sentiment === "positif" ? "😊 Positif" : r.sentiment === "negatif" ? "😞 Négatif" : "😐 Neutre"}
+                    </span>
+                  </div>
+                  <p className="review-card__comment">{r.comment}</p>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p style={{ color: "var(--fg-mute)" }}>
+            Aucun avis pour le moment. Soyez le premier à partager votre expérience !
+          </p>
+        )}
+
+        <ReviewForm productId={produit.id} />
       </section>
 
       {/* Accessoires associes */}
