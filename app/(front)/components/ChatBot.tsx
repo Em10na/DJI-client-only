@@ -1,17 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
-type Msg = { from: "bot" | "user"; text: string };
+type SuggestedProduct = {
+  id: string;
+  title: string;
+  price: number;
+  image_url: string | null;
+  stock: number;
+};
+
+type Msg = { from: "bot" | "user"; text: string; products?: SuggestedProduct[] };
 
 const GREETING =
-  "Bonjour ! 👋 Je suis l'assistant Kicksoft.\nJe peux vous aider avec la livraison, les retours, la garantie, le paiement, les produits et plus encore. Posez-moi votre question !";
+  "Bonjour ! 👋 Je suis l'assistant Kicksoft.\nDécrivez-moi votre projet (voyage, vlogging, podcast, mariage...) et je vous suggère les outils adaptés ! Je réponds aussi à vos questions : livraison, retours, garantie, paiement...";
 
 const QUICK_QUESTIONS = [
+  "Conseillez-moi un produit",
+  "Je veux filmer mes voyages",
   "Délais de livraison ?",
-  "Comment retourner un produit ?",
-  "Modes de paiement ?",
   "Garantie ?",
+];
+
+// If the message describes a need/project → product recommendation API
+const NEED_INDICATORS = [
+  "je veux", "je cherche", "je voudrais", "j'aimerais", "jaimerais",
+  "besoin", "conseil", "conseille", "recommand", "suggere", "suggestion",
+  "quel produit", "quoi acheter", "que me", "pour filmer", "pour faire",
+  "je fais", "je filme", "projet", "budget", "outil", "equipement",
+  "vlog", "youtube", "tiktok", "podcast", "mariage", "voyage", "sport",
+  "streaming", "debutant", "immobilier", "cinema", "documentaire",
 ];
 
 // Rule-based knowledge base — keywords → answer
@@ -129,7 +148,7 @@ export default function ChatBot() {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing, open]);
 
-  function send(text: string) {
+  async function send(text: string) {
     const question = text.trim();
     if (!question || typing) return;
 
@@ -137,7 +156,34 @@ export default function ChatBot() {
     setInput("");
     setTyping(true);
 
-    // Simulate thinking, then answer
+    const normalized = question.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const isNeed = NEED_INDICATORS.some((ind) => normalized.includes(ind));
+
+    // --- Product recommendation flow ---
+    if (isNeed) {
+      try {
+        const res = await fetch("/api/assistant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question }),
+        });
+        const data = await res.json();
+        setMessages((m) => [
+          ...m,
+          { from: "bot", text: data.reply ?? FALLBACK, products: data.products ?? [] },
+        ]);
+      } catch {
+        setMessages((m) => [
+          ...m,
+          { from: "bot", text: "Oups, je n'arrive pas à chercher dans le catalogue. Réessayez dans un instant !" },
+        ]);
+      } finally {
+        setTyping(false);
+      }
+      return;
+    }
+
+    // --- FAQ flow (rule-based) ---
     setTimeout(() => {
       setMessages((m) => [...m, { from: "bot", text: getAnswer(question) }]);
       setTyping(false);
@@ -161,8 +207,29 @@ export default function ChatBot() {
 
           <div className="chatbot-body" ref={bodyRef}>
             {messages.map((m, i) => (
-              <div key={i} className={`chat-msg chat-msg--${m.from}`}>
-                {m.text}
+              <div key={i} style={{ display: "contents" }}>
+                <div className={`chat-msg chat-msg--${m.from}`}>
+                  {m.text}
+                </div>
+                {m.products && m.products.length > 0 && (
+                  <div className="chat-products">
+                    {m.products.map((p) => (
+                      <Link key={p.id} href={`/produit/${p.id}`} className="chat-product">
+                        <img
+                          src={p.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&q=70&auto=format&fit=crop"}
+                          alt={p.title}
+                        />
+                        <span className="chat-product__info">
+                          <span className="chat-product__title">{p.title}</span>
+                          <span className="chat-product__price">{p.price} DT</span>
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {typing && (
