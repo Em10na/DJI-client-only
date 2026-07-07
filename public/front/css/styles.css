@@ -4776,17 +4776,17 @@ form.search input { padding-right: 100px; }
   .chatbot-fab { bottom: 80px !important; }
   .chatbot-panel { bottom: 140px !important; }
 
-  /* Panneau de notifications : pleine largeur du menu latéral,
-     pour qu'il s'affiche entièrement sur petit écran */
-  .smenu .notif-center__panel {
-    position: fixed; /* relatif au .smenu (qui a un transform) */
+  /* Panneau de notifications (cloche du header) : pleine largeur de
+     l'écran sous le header, pour qu'il s'affiche entièrement */
+  .notif-center__panel {
+    position: fixed;
     left: 10px;
     right: 10px;
-    top: 118px;
+    top: 70px;
     width: auto;
     max-width: none;
   }
-  .smenu .notif-center__list { max-height: 55vh; }
+  .notif-center__list { max-height: 60vh; }
 }
 
 /* Hide all Google Translate UI artifacts */
