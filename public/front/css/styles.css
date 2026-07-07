@@ -3197,6 +3197,50 @@ input, select, textarea { font: inherit; color: inherit; }
   padding: var(--s8) 0 var(--s7);
   background: var(--paper);
   overflow: hidden;
+  position: relative;
+}
+
+/* Mode carrousel : scroll natif (tactile / molette), piloté par JS pour
+   l'auto-défilement — remplace l'animation CSS */
+.circle-strip__track--scroll {
+  animation: none;
+  width: 100%;
+  overflow-x: auto;
+  padding: 0 var(--container-pad);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.circle-strip__track--scroll::-webkit-scrollbar { display: none; }
+
+/* Flèches gauche / droite */
+.circle-strip__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  cursor: pointer;
+  z-index: 5;
+  transition: box-shadow 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.circle-strip__arrow:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--indigo);
+  color: var(--indigo);
+}
+.circle-strip__arrow--l { left: 12px; }
+.circle-strip__arrow--r { right: 12px; }
+@media (max-width: 640px) {
+  .circle-strip__arrow { width: 36px; height: 36px; }
+  .circle-strip__arrow--l { left: 6px; }
+  .circle-strip__arrow--r { right: 6px; }
 }
 .circle-strip__track {
   display: flex;

@@ -4,6 +4,7 @@ import ProductCard from "./components/ProductCard";
 import DroneHeroSlider, { type HeroSlide } from "./components/DroneHeroSlider";
 import ScrollReveal from "./components/ScrollReveal";
 import BannerMedia, { type BannerMediaItem } from "./components/BannerMedia";
+import CategoryStrip from "./components/CategoryStrip";
 
 type HomeSectionMedia = BannerMediaItem & { display_order: number };
 type HomeSectionRow = {
@@ -128,19 +129,8 @@ export default async function HomePage() {
       {/* ====== HERO — BANNER CAROUSEL (articles soldés ou slides démo) ====== */}
       <DroneHeroSlider slides={heroSlides.length > 0 ? heroSlides : undefined} />
 
-      {/* ====== CIRCLE CATEGORY STRIP (auto-scrolling marquee) ====== */}
-      <section className="circle-strip" aria-label="Catégories">
-        <div className={`circle-strip__track${marquee ? "" : " circle-strip__track--static"}`}>
-          {(marquee ? [...circleCats, ...circleCats] : circleCats).map(({ label, href, img }, i) => (
-            <Link key={`${label}-${i}`} href={href} className="circle-item">
-              <span className="circle-item__pic">
-                <img src={img} alt={label} loading="lazy" />
-              </span>
-              <span className="circle-item__label">{label}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* ====== CIRCLE CATEGORY STRIP (auto + flèches + glissement) ====== */}
+      <CategoryStrip items={circleCats} marquee={marquee} />
 
       {/* ====== PROMO TILES — 4 photos plein cadre (sans texte) ====== */}
       <section className="promo-tiles">
