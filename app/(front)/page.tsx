@@ -132,26 +132,6 @@ export default async function HomePage() {
       {/* ====== CIRCLE CATEGORY STRIP (auto + flèches + glissement) ====== */}
       <CategoryStrip items={circleCats} marquee={marquee} />
 
-      {/* ====== PROMO TILES — 4 photos plein cadre (sans texte) ====== */}
-      <section className="promo-tiles">
-        <div className="container">
-          <div className="promo-tiles__grid">
-            <Link href="/boutique?q=camera" className="promo-tile" aria-label="Caméras">
-              <div className="promo-tile__bg" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1000&q=85&auto=format&fit=crop)" }} />
-            </Link>
-            <Link href="/boutique?q=gimbal" className="promo-tile" aria-label="Gimbals">
-              <div className="promo-tile__bg" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=1000&q=85&auto=format&fit=crop)" }} />
-            </Link>
-            <Link href="/boutique?q=audio" className="promo-tile" aria-label="Audio">
-              <div className="promo-tile__bg" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583394838336-acd977736f90?w=1000&q=85&auto=format&fit=crop)" }} />
-            </Link>
-            <Link href="/boutique?q=drone" className="promo-tile" aria-label="Drones">
-              <div className="promo-tile__bg" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=1000&q=85&auto=format&fit=crop)" }} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* ====== WHAT'S NEW ====== */}
       <section className="section" style={{ paddingTop: "var(--s5)" }}>
         <div className="container">

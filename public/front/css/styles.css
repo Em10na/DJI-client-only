@@ -3613,6 +3613,43 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 
 /* ================================================================
+   WHATSAPP FAB — floating WhatsApp button
+   ================================================================ */
+.wa-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 92px;
+  z-index: 900;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 28px -6px rgba(37,211,102,0.5);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  text-decoration: none;
+}
+.wa-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 36px -6px rgba(37,211,102,0.65);
+}
+.wa-fab::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: rgba(37,211,102,0.25);
+  animation: wa-pulse 2.5s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes wa-pulse {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+/* ================================================================
    CHATBOT — floating AI assistant
    ================================================================ */
 .chatbot-fab {
@@ -4782,7 +4819,8 @@ form.search input { padding-right: 100px; }
   /* Le contenu ne doit pas finir caché derrière la barre */
   body { padding-bottom: 64px; }
 
-  /* Le bouton du chatbot remonte au-dessus de la barre */
+  /* Les boutons flottants remontent au-dessus de la barre */
+  .wa-fab { bottom: 80px !important; right: 92px !important; }
   .chatbot-fab { bottom: 80px !important; }
   .chatbot-panel { bottom: 140px !important; }
 
