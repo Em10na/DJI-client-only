@@ -3901,16 +3901,17 @@ input, select, textarea { font: inherit; color: inherit; }
    FLY-TO-CART ANIMATION
    ================================================================ */
 
-/* Floating dot animated via Web Animations API (transform-based arc) */
+/* Product thumbnail that flies + rotates toward the cart icon */
 .cart-fly {
   position: fixed;
   left: 0;
   top: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--indigo, #4f46e5);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.18), 0 4px 14px rgba(79, 70, 229, 0.45);
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg, #f8fafc);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
   pointer-events: none;
   z-index: 9999;
   will-change: transform, opacity;

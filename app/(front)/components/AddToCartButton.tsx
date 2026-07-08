@@ -8,7 +8,7 @@ type Props = {
   showQty?: boolean;
 };
 
-function flyToCart(source: HTMLElement | null) {
+function flyToCart(source: HTMLElement | null, imageUrl: string | null) {
   if (typeof window === "undefined" || !source) return;
 
   const cartIcon = [
@@ -21,32 +21,44 @@ function flyToCart(source: HTMLElement | null) {
   });
   if (!cartIcon) return;
 
-  const sr = source.getBoundingClientRect();
+  // Start from the product image if possible, otherwise from the button
+  const card = source.closest<HTMLElement>(".product-card");
+  const imgEl = card?.querySelector<HTMLImageElement>(".img-wrap img");
+  const origin = imgEl ?? source;
+
+  const sr = origin.getBoundingClientRect();
   const tr = cartIcon.getBoundingClientRect();
 
-  // Start / end centers
-  const sx = sr.left + sr.width / 2;
-  const sy = sr.top  + sr.height / 2;
-  const ex = tr.left + tr.width / 2;
-  const ey = tr.top  + tr.height / 2;
+  const SIZE = 64;
+  const sx = sr.left + sr.width  / 2 - SIZE / 2;
+  const sy = sr.top  + sr.height / 2 - SIZE / 2;
+  const ex = tr.left + tr.width  / 2 - SIZE / 2;
+  const ey = tr.top  + tr.height / 2 - SIZE / 2;
 
-  // Arc apex: midpoint horizontally, 160px above the highest of the two points
+  // Arc apex — 160px above the highest of the two points
   const mx = (sx + ex) / 2;
   const my = Math.min(sy, ey) - 160;
 
-  // The dot starts positioned at 0,0 and moves via transform
   const fly = document.createElement("div");
   fly.className = "cart-fly";
+
+  if (imageUrl) {
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+    fly.appendChild(img);
+  }
+
   document.body.appendChild(fly);
 
-  // Web Animations API — three keyframes define the parabolic arc
+  // 3-keyframe arc with continuous rotation
   const anim = fly.animate(
     [
-      { transform: `translate(${sx - 8}px, ${sy - 8}px) scale(1)`,   opacity: "1"   },
-      { transform: `translate(${mx - 8}px, ${my - 8}px) scale(0.85)`, opacity: "1", offset: 0.42 },
-      { transform: `translate(${ex - 8}px, ${ey - 8}px) scale(0.25)`, opacity: "0"  },
+      { transform: `translate(${sx}px, ${sy}px) scale(1)    rotate(0deg)`,   opacity: "0.72" },
+      { transform: `translate(${mx}px, ${my}px) scale(0.72) rotate(210deg)`, opacity: "0.60", offset: 0.45 },
+      { transform: `translate(${ex}px, ${ey}px) scale(0.18) rotate(400deg)`, opacity: "0"    },
     ],
-    { duration: 1400, easing: "cubic-bezier(0.33, 0, 0.66, 1)", fill: "forwards" }
+    { duration: 1500, easing: "ease-in-out", fill: "forwards" }
   );
 
   anim.onfinish = () => {
@@ -65,7 +77,7 @@ export default function AddToCartButton({ product, showQty = false }: Props) {
   function handleAdd() {
     addItem(product, qty);
     setAdded(true);
-    flyToCart(btnRef.current);
+    flyToCart(btnRef.current, product.image_url);
     setTimeout(() => setAdded(false), 1500);
   }
 
