@@ -45,9 +45,9 @@ export default function MobileBottomBar() {
       <Link href="/panier" className={`bottom-bar__item bottom-bar__item--cart${actif("/panier") ? " is-active" : ""}`}>
         <span style={{ position: "relative", display: "inline-flex" }}>
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 2l-2 5v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z" />
-            <path d="M4 7h16" />
-            <path d="M16 11a4 4 0 0 1-8 0" />
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
           </svg>
           <CartCount />
         </span>
