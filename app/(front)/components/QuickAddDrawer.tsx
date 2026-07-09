@@ -32,7 +32,6 @@ export default function QuickAddDrawer() {
     return () => window.removeEventListener("quickadd", onQuickAdd);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
@@ -70,10 +69,10 @@ export default function QuickAddDrawer() {
         aria-modal="true"
         aria-label={`Aperçu : ${product.title}`}
       >
-        {/* Barre de glissement — flottante sur l'image */}
+        {/* Handle drag (mobile) */}
         <div className="qa-handle" aria-hidden="true" />
 
-        {/* Image pleine largeur + bouton fermer en overlay */}
+        {/* Image carrée + close + compteur */}
         <div className="qa-img">
           <img
             src={product.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80&auto=format&fit=crop"}
@@ -84,48 +83,61 @@ export default function QuickAddDrawer() {
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
+          <span className="qa-counter">1 / 1</span>
         </div>
 
-        {/* Corps : nom (1 ligne) + prix + stock + actions */}
-        <div className="qa-body">
-          <p className="qa-title">{product.title}</p>
-          <div className="qa-pricing">
-            <span className="qa-price">{product.price.toFixed(2)} DT</span>
-            {product.compare_price && product.compare_price > product.price && (
-              <>
-                <span className="qa-compare">{product.compare_price.toFixed(2)} DT</span>
-                <span className="qa-badge">−{discount}%</span>
-              </>
-            )}
-          </div>
-          <p className={`qa-stock ${product.stock <= 0 ? "qa-stock--out" : ""}`}>
-            <span className="qa-stock-dot" />
-            {product.stock > 0
-              ? `En stock — ${product.stock} article${product.stock > 1 ? "s" : ""}`
-              : "Rupture de stock"}
-          </p>
-          <div className="qa-actions">
+        {/* Info produit scrollable */}
+        <div className="qa-scroll">
+          <div className="qa-body">
+            <p className="qa-title">{product.title}</p>
+
+            {/* Prix */}
+            <div className="qa-pricing">
+              {product.compare_price && product.compare_price > product.price && (
+                <div className="qa-pricing-top">
+                  <span className="qa-compare">{product.compare_price.toFixed(2)} DT</span>
+                  <span className="qa-badge">−{discount}%</span>
+                </div>
+              )}
+              <span className="qa-price">{product.price.toFixed(2)} DT</span>
+            </div>
+
+            {/* Stock */}
+            <p className={`qa-stock ${product.stock <= 0 ? "qa-stock--out" : ""}`}>
+              <span className="qa-stock-dot" />
+              {product.stock > 0
+                ? `En stock — ${product.stock} article${product.stock > 1 ? "s" : ""}`
+                : "Rupture de stock"}
+            </p>
+
+            {/* Quantité */}
             {product.stock > 0 && (
-              <div className="qty qa-qty">
-                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Diminuer">&#x2212;</button>
-                <input type="text" value={qty} readOnly inputMode="numeric" aria-label="Quantité" />
-                <button type="button" onClick={() => setQty(Math.min(product.stock, qty + 1))} aria-label="Augmenter">+</button>
+              <div className="qa-actions">
+                <div className="qty qa-qty">
+                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Diminuer">&#x2212;</button>
+                  <input type="text" value={qty} readOnly inputMode="numeric" aria-label="Quantité" />
+                  <button type="button" onClick={() => setQty(Math.min(product.stock, qty + 1))} aria-label="Augmenter">+</button>
+                </div>
               </div>
             )}
-            <button
-              className={`btn ${added ? "btn--emerald" : "btn--indigo"} qa-add-btn`}
-              onClick={handleAdd}
-              disabled={product.stock <= 0 || added}
-            >
-              {added ? "✓ Ajouté au panier !" : product.stock <= 0 ? "Rupture de stock" : "Ajouter au panier"}
-            </button>
-            <Link href={`/produit/${product.id}`} className="qa-view-link" onClick={close}>
-              Voir la fiche complète
-              <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
-                <path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
           </div>
+        </div>
+
+        {/* Pied fixe : bouton + lien fiche */}
+        <div className="qa-footer">
+          <button
+            className={`btn ${added ? "btn--emerald" : "btn--indigo"} qa-add-btn`}
+            onClick={handleAdd}
+            disabled={product.stock <= 0 || added}
+          >
+            {added ? "✓ Ajouté au panier !" : product.stock <= 0 ? "Rupture de stock" : "Ajouter au panier"}
+          </button>
+          <Link href={`/produit/${product.id}`} className="qa-view-link" onClick={close}>
+            Voir la fiche complète
+            <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
+              <path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
       </div>
     </>
