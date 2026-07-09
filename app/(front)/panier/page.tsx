@@ -248,23 +248,28 @@ export default function PanierPage() {
                             />
                           </div>
                           <div className="cart-item-v2__body">
-                            <Link href={`/produit/${item.id}`} className="cart-item-v2__name">{item.title}</Link>
-                            <span className="cart-item-v2__price">{item.price} DT / unité</span>
-                            <div className="cart-item-v2__qty">
-                              <button type="button" onClick={() => updateQty(item.id, item.qty - 1)} aria-label="Diminuer">&#x2212;</button>
-                              <input type="text" value={item.qty} readOnly inputMode="numeric" aria-label="Quantité" />
-                              <button type="button" onClick={() => updateQty(item.id, item.qty + 1)} aria-label="Augmenter">+</button>
+                            {/* ligne 1 : nom + corbeille */}
+                            <div className="cart-item-v2__top">
+                              <Link href={`/produit/${item.id}`} className="cart-item-v2__name">{item.title}</Link>
+                              <button className="cart-item-v2__remove" onClick={() => removeItem(item.id)} aria-label="Supprimer">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3,6 5,6 21,6" />
+                                  <path d="M19,6l-1,14a2 2 0 01-2 2H8a2 2 0 01-2-2L5,6" />
+                                  <path d="M10,11v6M14,11v6M9,6V4h6v2" />
+                                </svg>
+                              </button>
                             </div>
-                          </div>
-                          <div className="cart-item-v2__right">
-                            <button className="cart-item-v2__remove" onClick={() => removeItem(item.id)} aria-label="Supprimer">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="3,6 5,6 21,6" />
-                                <path d="M19,6l-1,14a2 2 0 01-2 2H8a2 2 0 01-2-2L5,6" />
-                                <path d="M10,11v6M14,11v6M9,6V4h6v2" />
-                              </svg>
-                            </button>
-                            <span className="cart-item-v2__total">{(item.price * item.qty).toFixed(2)} DT</span>
+                            {/* ligne 2 : prix unitaire */}
+                            <span className="cart-item-v2__price">{item.price} DT / unité</span>
+                            {/* ligne 3 : sélecteur qté + total */}
+                            <div className="cart-item-v2__bottom">
+                              <div className="cart-item-v2__qty">
+                                <button type="button" onClick={() => updateQty(item.id, item.qty - 1)} aria-label="Diminuer">&#x2212;</button>
+                                <input type="text" value={item.qty} readOnly inputMode="numeric" aria-label="Quantité" />
+                                <button type="button" onClick={() => updateQty(item.id, item.qty + 1)} aria-label="Augmenter">+</button>
+                              </div>
+                              <span className="cart-item-v2__total">{(item.price * item.qty).toFixed(2)} DT</span>
+                            </div>
                           </div>
                         </div>
                       ))}

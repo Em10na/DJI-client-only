@@ -1226,7 +1226,7 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .cart-item-v2 {
   display: flex;
-  gap: var(--s4);
+  gap: 12px;
   align-items: flex-start;
   padding: 14px 16px;
   border-bottom: 1px solid var(--rule);
@@ -1240,8 +1240,12 @@ input, select, textarea { font: inherit; color: inherit; }
   flex-shrink: 0;
 }
 .cart-item-v2__img img { width: 100%; height: 100%; object-fit: cover; }
-.cart-item-v2__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* Corps : 2e colonne, flex-col, contient toutes les infos */
+.cart-item-v2__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+/* Ligne 1 : nom (tronqué) + bouton supprimer */
+.cart-item-v2__top { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
 .cart-item-v2__name {
+  flex: 1; min-width: 0;
   font-family: var(--ff-display);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -1251,14 +1255,26 @@ input, select, textarea { font: inherit; color: inherit; }
   text-overflow: ellipsis;
   text-decoration: none;
   display: block;
+  line-height: 1.35;
 }
 .cart-item-v2__name:hover { color: var(--indigo); }
+.cart-item-v2__remove {
+  flex-shrink: 0;
+  background: none; border: none;
+  color: var(--ink-faint); padding: 2px 0 2px 4px;
+  cursor: pointer; transition: color 0.15s;
+  display: flex; align-items: center;
+}
+.cart-item-v2__remove:hover { color: var(--rose); }
+/* Ligne 2 : prix unitaire */
 .cart-item-v2__price { font-family: var(--ff-mono); font-size: 11.5px; color: var(--fg-mute); }
-.cart-item-v2__qty {
-  display: inline-flex;
-  align-items: center;
+/* Ligne 3 : sélecteur qté (gauche) + total (droite) */
+.cart-item-v2__bottom {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: var(--s2);
   margin-top: 4px;
 }
+.cart-item-v2__qty { display: inline-flex; align-items: center; }
 .cart-item-v2__qty button {
   width: 28px; height: 28px;
   border: 1px solid var(--rule-strong);
@@ -1278,13 +1294,7 @@ input, select, textarea { font: inherit; color: inherit; }
   text-align: center; font-size: 13px; font-weight: 600;
   background: var(--paper); color: var(--ink);
 }
-.cart-item-v2__right {
-  display: flex; flex-direction: column; align-items: flex-end;
-  gap: var(--s2); flex-shrink: 0;
-}
-.cart-item-v2__total { font-family: var(--ff-display); font-weight: 700; font-size: var(--text-base); color: var(--ink); white-space: nowrap; }
-.cart-item-v2__remove { background: none; border: none; color: var(--ink-faint); padding: 4px; cursor: pointer; transition: color 0.15s; }
-.cart-item-v2__remove:hover { color: var(--rose); }
+.cart-item-v2__total { font-family: var(--ff-display); font-weight: 700; font-size: var(--text-sm); color: var(--ink); white-space: nowrap; }
 
 /* ---------- Contact ---------- */
 .contact-grid {
