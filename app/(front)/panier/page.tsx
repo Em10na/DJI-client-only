@@ -16,6 +16,7 @@ export default function PanierPage() {
   const [pointsBalance, setPointsBalance] = useState(0);
   const [usePoints, setUsePoints] = useState(false);
   const [pointsPercentage, setPointsPercentage] = useState(100);
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [guestForm, setGuestForm] = useState({ nom: "", prenom: "", adresse: "", telephone: "" });
   const router = useRouter();
@@ -31,6 +32,22 @@ export default function PanierPage() {
     }
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (items.length === 0) { setCategoryMap({}); return; }
+    supabase
+      .from("products")
+      .select("id, categories(name)")
+      .in("id", items.map((i) => i.id))
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        for (const p of data as { id: string; categories?: { name: string } | null }[]) {
+          map[p.id] = p.categories?.name ?? "Général";
+        }
+        setCategoryMap(map);
+      });
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pointsToUse = usePoints ? Math.floor(pointsBalance * pointsPercentage / 100) : 0;
   const pointsDiscount = usePoints ? Math.min(pointsToUse * LOYALTY.REDEEM_RATE, total) : 0;
@@ -148,6 +165,14 @@ export default function PanierPage() {
     setLoading(false);
   }
 
+  // Groupement des articles par catégorie
+  const grouped: Record<string, typeof items> = {};
+  for (const item of items) {
+    const cat = categoryMap[item.id] || "Général";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  }
+
   if (succes) {
     return (
       <>
@@ -202,49 +227,46 @@ export default function PanierPage() {
           ) : (
             <div className="cart-layout">
               <div>
-                {/* Liste articles */}
-                <div className="cart-list">
-                  {items.map((item) => (
-                    <div key={item.id} style={{ display: "flex", gap: "var(--s5)", padding: "var(--s5) 0", borderBottom: "1px solid var(--rule)", alignItems: "center" }}>
-                      {/* Image */}
-                      <div style={{ width: 90, height: 90, borderRadius: "var(--r)", overflow: "hidden", background: "var(--bg)", flexShrink: 0 }}>
-                        <img
-                          src={item.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80"}
-                          alt={item.title}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
+                {/* Articles groupés par catégorie */}
+                <div>
+                  {Object.entries(grouped).map(([catName, catItems]) => (
+                    <div key={catName} className="cart-cat-group">
+                      <div className="cart-cat-header">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                          <polyline points="9,22 9,12 15,12 15,22" />
+                        </svg>
+                        {catName}
                       </div>
-
-                      {/* Details */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Link href={`/produit/${item.id}`} style={{ fontWeight: 600, fontSize: "var(--text-base)", color: "var(--ink)", textDecoration: "none", display: "block", marginBottom: "4px" }}>
-                          {item.title}
-                        </Link>
-                        <div style={{ fontFamily: "var(--ff-mono)", fontSize: "var(--text-xs)", color: "var(--fg-mute)" }}>
-                          {item.price} DT / unite
+                      {catItems.map((item) => (
+                        <div key={item.id} className="cart-item-v2">
+                          <div className="cart-item-v2__img">
+                            <img
+                              src={item.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80"}
+                              alt={item.title}
+                            />
+                          </div>
+                          <div className="cart-item-v2__body">
+                            <Link href={`/produit/${item.id}`} className="cart-item-v2__name">{item.title}</Link>
+                            <span className="cart-item-v2__price">{item.price} DT / unité</span>
+                            <div className="cart-item-v2__qty">
+                              <button type="button" onClick={() => updateQty(item.id, item.qty - 1)} aria-label="Diminuer">&#x2212;</button>
+                              <input type="text" value={item.qty} readOnly inputMode="numeric" aria-label="Quantité" />
+                              <button type="button" onClick={() => updateQty(item.id, item.qty + 1)} aria-label="Augmenter">+</button>
+                            </div>
+                          </div>
+                          <div className="cart-item-v2__right">
+                            <button className="cart-item-v2__remove" onClick={() => removeItem(item.id)} aria-label="Supprimer">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3,6 5,6 21,6" />
+                                <path d="M19,6l-1,14a2 2 0 01-2 2H8a2 2 0 01-2-2L5,6" />
+                                <path d="M10,11v6M14,11v6M9,6V4h6v2" />
+                              </svg>
+                            </button>
+                            <span className="cart-item-v2__total">{(item.price * item.qty).toFixed(2)} DT</span>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Quantite */}
-                      <div className="qty" style={{ flexShrink: 0 }}>
-                        <button type="button" onClick={() => updateQty(item.id, item.qty - 1)} aria-label="Diminuer">&#x2212;</button>
-                        <input type="text" value={item.qty} readOnly inputMode="numeric" aria-label="Quantite" />
-                        <button type="button" onClick={() => updateQty(item.id, item.qty + 1)} aria-label="Augmenter">+</button>
-                      </div>
-
-                      {/* Sous-total */}
-                      <div style={{ fontFamily: "var(--ff-display)", fontWeight: 700, fontSize: "var(--text-base)", minWidth: "80px", textAlign: "right" }}>
-                        {(item.price * item.qty).toFixed(2)} DT
-                      </div>
-
-                      {/* Supprimer */}
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-mute)", fontSize: "18px", padding: "8px", flexShrink: 0 }}
-                        aria-label="Supprimer"
-                      >
-                        &#x2715;
-                      </button>
+                      ))}
                     </div>
                   ))}
                 </div>

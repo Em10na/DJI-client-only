@@ -23,11 +23,16 @@ export default function MobileBottomBar() {
         <span>Accueil</span>
       </Link>
 
-      {/* Boutique */}
+      {/* Boutique — magasin avec rideau rouge */}
       <Link href="/boutique" className={`bottom-bar__item${actif("/boutique") ? " is-active" : ""}`}>
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
-          <circle cx="9" cy="20" r="1" /><circle cx="20" cy="20" r="1" />
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          {/* Bâtiment */}
+          <path stroke="currentColor" strokeWidth="1.9" d="M4 22V11H20V22" />
+          <path stroke="currentColor" strokeWidth="1.9" d="M2 11L12 4l10 7" />
+          {/* Porte */}
+          <path stroke="currentColor" strokeWidth="1.9" d="M10 22v-5h4v5" />
+          {/* Rideau / auvent rouge */}
+          <path stroke="#ef4444" strokeWidth="3" fill="none" d="M4 11 Q12 16 20 11" />
         </svg>
         <span>Boutique</span>
       </Link>
