@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const runtime = 'edge';
+
 // ================================================================
 // Visual Search — receives category terms detected by the
 // client-side image classifier (MobileNet) and returns

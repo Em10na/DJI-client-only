@@ -40,17 +40,23 @@ export default function ConnexionPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase.from("profiles").select("role_id, roles(name)").eq("id", user.id).single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role_id, roles(name)")
+        .eq("id", user.id)
+        .single();
       const roles = profile?.roles as unknown as { name: string } | null;
       const roleName = roles?.name;
+
       if (roleName === "admin" || roleName === "manager") {
-        router.push("/admin");
-      } else {
-        router.push("/compte");
+        await supabase.auth.signOut();
+        setErreur("Votre compte est un compte administrateur. Cette application est réservée aux clients.");
+        setChargement(false);
+        return;
       }
-    } else {
-      router.push("/compte");
     }
+
+    router.push("/compte");
     router.refresh();
   }
 

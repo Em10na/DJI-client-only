@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
+import { launchCartAnim } from "@/app/(front)/lib/cartAnim";
 
 type Product = {
   id: string;
@@ -49,44 +50,9 @@ export default function QuickAddDrawer() {
     if (!product || product.stock <= 0) return;
     addItem(product, qty);
     setAdded(true);
-    flyOrb();
+    const btn = drawerRef.current?.querySelector<HTMLElement>(".qa-add-btn");
+    if (btn) launchCartAnim(btn);
     setTimeout(close, 1100);
-  }
-
-  function flyOrb() {
-    const btn = drawerRef.current?.querySelector(".qa-add-btn") as HTMLElement | null;
-    const cart = (
-      document.querySelector(".bottom-bar__item--cart") ||
-      document.querySelector('[href="/panier"].icon-btn')
-    ) as HTMLElement | null;
-    if (!btn || !cart) return;
-
-    const from = btn.getBoundingClientRect();
-    const to   = cart.getBoundingClientRect();
-    const orb  = document.createElement("div");
-
-    Object.assign(orb.style, {
-      position: "fixed",
-      width: "15px", height: "15px",
-      borderRadius: "50%",
-      background: "#4f46e5",
-      boxShadow: "0 0 10px rgba(79,70,229,0.7)",
-      zIndex: "9999",
-      pointerEvents: "none",
-      left: `${from.left + from.width / 2 - 7.5}px`,
-      top:  `${from.top  + from.height / 2 - 7.5}px`,
-    });
-    document.body.appendChild(orb);
-
-    const dx  = to.left + to.width  / 2 - (from.left + from.width  / 2);
-    const dy  = to.top  + to.height / 2 - (from.top  + from.height / 2);
-    const arc = Math.min(Math.abs(dy) * 0.5, 90);
-
-    orb.animate([
-      { transform: "translate(0,0) scale(1)", opacity: "1" },
-      { transform: `translate(${dx * 0.5}px,${dy * 0.5 - arc}px) scale(0.65)`, opacity: "0.85", offset: 0.5 },
-      { transform: `translate(${dx}px,${dy}px) scale(0.15)`, opacity: "0" },
-    ], { duration: 620, easing: "cubic-bezier(.4,0,.2,1)" }).onfinish = () => orb.remove();
   }
 
   if (!product) return null;

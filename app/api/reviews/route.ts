@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { moderateComment } from "@/lib/moderation";
 import { analyzeReviewSentiment } from "@/lib/sentiment";
 
+export const runtime = 'edge';
+
 // GET /api/reviews?product_id=xxx — list reviews for a product
 export async function GET(request: NextRequest) {
   const productId = request.nextUrl.searchParams.get("product_id");

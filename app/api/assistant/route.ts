@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const runtime = 'edge';
+
 // ================================================================
 // AI Assistant — product recommendation engine
 // Analyzes the customer's description (use case) and suggests

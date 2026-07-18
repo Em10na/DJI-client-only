@@ -176,7 +176,7 @@ export default async function HomePage() {
                 ))
               ) : (
                 <p style={{ gridColumn: "1/-1", textAlign: "center", color: "var(--fg-mute)" }}>
-                  Aucun produit pour le moment. <Link href="/admin/produits" style={{ color: "var(--indigo)" }}>Ajoutez-en depuis l&apos;admin</Link>
+                  Aucun produit pour le moment.
                 </p>
               )}
             </div>

@@ -1,6 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+async function getUserRole(supabase: ReturnType<typeof createServerClient>, userId: string): Promise<string | null> {
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role_id, roles(name)")
+      .eq("id", userId)
+      .single();
+    const roles = profile?.roles as unknown as { name: string } | null;
+    return roles?.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -31,67 +45,40 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // --- Routes admin : authentifie + role admin ou manager ---
-  if (pathname.startsWith("/admin")) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/connexion";
-      return NextResponse.redirect(url);
-    }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role_id, roles(name)")
-      .eq("id", user.id)
-      .single();
-    const roles = profile?.roles as unknown as { name: string } | null;
-    const roleName = roles?.name;
-    if (roleName !== "admin" && roleName !== "manager") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/compte";
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // --- Routes compte : authentifie + reserve aux clients ---
-  // (l'admin/manager a son propre espace : le dashboard /admin)
+  // --- Routes compte : authentification + rôle client requis ---
   if (pathname.startsWith("/compte")) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/connexion";
       return NextResponse.redirect(url);
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role_id, roles(name)")
-      .eq("id", user.id)
-      .single();
-    const roles = profile?.roles as unknown as { name: string } | null;
-    const roleName = roles?.name;
-    if (roleName === "admin" || roleName === "manager") {
+    const role = await getUserRole(supabase, user.id);
+    if (role === "admin" || role === "manager") {
+      // Admin n'a pas d'espace client — rediriger vers la page de connexion
+      // pour qu'il puisse se déconnecter ou utiliser un compte client
       const url = request.nextUrl.clone();
-      url.pathname = "/admin";
+      url.pathname = "/auth/connexion";
       return NextResponse.redirect(url);
     }
   }
 
-  // --- Auth : rediriger si deja connecte ---
+  // --- Auth : rediriger si déjà connecté ---
   if (pathname.startsWith("/auth/") && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role_id, roles(name)")
-      .eq("id", user.id)
-      .single();
-    const roles = profile?.roles as unknown as { name: string } | null;
-    const roleName = roles?.name;
-    const url = request.nextUrl.clone();
-    url.pathname =
-      roleName === "admin" || roleName === "manager" ? "/admin" : "/compte";
-    return NextResponse.redirect(url);
+    const role = await getUserRole(supabase, user.id);
+    if (role === "admin" || role === "manager") {
+      // Laisser l'admin accéder à /auth/ : la page de connexion lui montrera
+      // un message de blocage et le déconnectera. S'il ne le fait pas,
+      // il reste bloqué dans une boucle sans issue.
+    } else {
+      const url = request.nextUrl.clone();
+      url.pathname = "/compte";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/auth/:path*", "/compte/:path*"],
+  matcher: ["/auth/:path*", "/compte/:path*"],
 };

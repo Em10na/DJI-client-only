@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // web-push utilise des modules Node.js natifs (crypto, http2…)
-  // qu'il ne faut pas bundler — Turbopack/webpack les laisse en externe
-  serverExternalPackages: ["web-push"],
+  images: {
+    // Cloudflare Workers ne supporte pas le serveur d'optimisation d'images Next.js
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { guest_name, guest_phone, guest_address, items } = body;
